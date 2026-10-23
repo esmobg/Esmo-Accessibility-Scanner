@@ -32,7 +32,7 @@ function esmoas_legacy_plugin_installed(): bool {
 function esmoas_uninstall_site( bool $remove_legacy ): void {
 	global $wpdb;
 
-	$esmoas_suffixes = array( 'esmoas_scans', 'esmoas_issues', 'esmoas_history' );
+	$esmoas_suffixes = array( 'esmoas_scans', 'esmoas_issues', 'esmoas_history', 'esmoas_scan_pages' );
 	if ( $remove_legacy ) {
 		$esmoas_suffixes = array_merge( $esmoas_suffixes, array( 'accg_scans', 'accg_issues', 'accg_history' ) );
 	}

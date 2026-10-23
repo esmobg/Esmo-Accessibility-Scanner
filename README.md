@@ -191,7 +191,7 @@ flowchart LR
 
 1. **Start.** `esmoas_start_scan` builds the queue of URLs (home page, published content in ID order, optional term archives, capped at 1,000) and creates a scan record.
 2. **Scan.** For each URL, `assets/js/scanner.js` loads the page in a sandboxed, same-origin frame, injects the bundled axe-core and runs it with the configured WCAG tags. `assets/js/custom-rules.js` adds the supplemental checks. The WordPress toolbar is excluded.
-3. **Save.** The results are sent to `esmoas_save_results`, checked and normalized into issue rows (severity, WCAG reference, category, fix, documentation link) and stored. The server treats the browser's data as untrusted: the page must be on the site, each queued page can be saved once, and at most 150 rules per group, 25 elements per rule and 2,500 rows per page are kept.
+3. **Save.** The results are sent to `esmoas_save_results`, checked and normalized into issue rows (severity, WCAG reference, category, fix, documentation link) and stored. The server treats the browser's data as untrusted: the page must be one the scan queued (the queue is kept on the server), each page can be saved once, its post id comes from the queue, and at most 150 rules per group, 25 elements per rule and 2,500 rows per page are kept.
 4. **Finish.** `esmoas_finish_scan` calculates the per-page and site score, stores the totals and adds a point to the history, or marks the scan as cancelled.
 
 All AJAX requests require the `esmoas_scan` nonce and the capability returned by `esmoas_required_capability` (default `manage_options`). Settings use their own capability, `esmoas_settings_capability` (also `manage_options`).
@@ -236,6 +236,7 @@ Repository-only folders (not in the release zip): `tests/` (PHPUnit), `bin/` (bu
 | `{prefix}esmoas_scans` | table | One row per scan: type, status (`running`, `complete`, `cancelled`, `failed`), URL counts, score, totals |
 | `{prefix}esmoas_issues` | table | One row per finding |
 | `{prefix}esmoas_history` | table | Score history for the progress chart (complete scans only) |
+| `{prefix}esmoas_scan_pages` | table | Pages queued by running scans (URL hash, post id, saved flag), so each page is saved once; emptied when a scan ends |
 | `esmoas_settings` | option | Post types, term archives, WCAG level, best-practice checks, enabled fixes |
 | `esmoas_db_version` | option | Installed schema version |
 | `esmoas_legacy_import`, `esmoas_legacy_import_tables` | options | Progress of the one-time import from Accessibility Guardian (`settings`, then `done`, and the tables already copied); a failed copy is retried at most once an hour or when a scan starts |

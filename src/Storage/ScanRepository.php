@@ -41,6 +41,37 @@ final class ScanRepository {
 	}
 
 	/**
+	 * Queued pages of running scans.
+	 */
+	private function pages_table(): string {
+		global $wpdb;
+
+		return $wpdb->prefix . 'esmoas_scan_pages';
+	}
+
+	/**
+	 * Remember the pages a scan will visit, so each can be saved exactly once.
+	 *
+	 * @param int                                                    $scan_id Scan id.
+	 * @param array<int, array{url:string,post_id:int,label:string}> $queue   URL queue.
+	 */
+	public function queue_pages( int $scan_id, array $queue ): void {
+		global $wpdb;
+
+		foreach ( $queue as $entry ) {
+			$wpdb->insert(
+				$this->pages_table(),
+				array(
+					'scan_id'  => $scan_id,
+					'url_hash' => md5( $entry['url'] ),
+					'post_id'  => (int) $entry['post_id'],
+				),
+				array( '%d', '%s', '%d' )
+			);
+		}
+	}
+
+	/**
 	 * Create a new scan record.
 	 *
 	 * @param string $scan_type  Scan type (single|full).
@@ -67,26 +98,60 @@ final class ScanRepository {
 	}
 
 	/**
-	 * Count one more scanned page, if the scan is running and has pages left.
+	 * Claim a queued page of a running scan for saving its results.
 	 *
-	 * A scan never accepts more results than the pages it queued, so neither
-	 * repeated requests nor saves after the scan finished can inflate it.
+	 * Each queued URL can be claimed once (one atomic UPDATE), so repeated or
+	 * forged requests can neither duplicate a page's issues nor add pages the
+	 * scan never queued, and nothing is accepted after the scan has ended.
 	 *
-	 * @param int $scan_id Scan id.
-	 * @return bool Whether a page slot was claimed.
+	 * @param int    $scan_id Scan id.
+	 * @param string $url     Page URL exactly as it was queued.
+	 * @return int|null The queued post id, or null when the page cannot be saved.
 	 */
-	public function claim_page( int $scan_id ): bool {
+	public function claim_page( int $scan_id, string $url ): ?int {
 		global $wpdb;
 
-		$updated = $wpdb->query(
+		$hash    = md5( $url );
+		$claimed = $wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$this->table()} SET scanned_urls = scanned_urls + 1, updated_at = %s WHERE id = %d AND status = 'running' AND scanned_urls < total_urls", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"UPDATE {$this->pages_table()} SET saved = 1 WHERE scan_id = %d AND url_hash = %s AND saved = 0", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$scan_id,
+				$hash
+			)
+		);
+
+		if ( 1 !== $claimed ) {
+			return null;
+		}
+
+		$counted = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$this->table()} SET scanned_urls = scanned_urls + 1, updated_at = %s WHERE id = %d AND status = 'running'", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				current_time( 'mysql' ),
 				$scan_id
 			)
 		);
 
-		return 1 === $updated;
+		if ( 1 !== $counted ) {
+			return null;
+		}
+
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT post_id FROM {$this->pages_table()} WHERE scan_id = %d AND url_hash = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$scan_id,
+				$hash
+			)
+		);
+	}
+
+	/**
+	 * Forget the queue of scans that are no longer running.
+	 */
+	private function forget_finished_pages(): void {
+		global $wpdb;
+
+		$wpdb->query( "DELETE FROM {$this->pages_table()} WHERE scan_id NOT IN ( SELECT id FROM {$this->table()} WHERE status = 'running' )" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 	}
 
 	/**
@@ -162,7 +227,13 @@ final class ScanRepository {
 			array( '%d', '%s' )
 		);
 
-		return 1 === $updated;
+		if ( 1 !== $updated ) {
+			return false;
+		}
+
+		$this->forget_finished_pages();
+
+		return true;
 	}
 
 	/**
@@ -188,6 +259,8 @@ final class ScanRepository {
 				$cutoff
 			)
 		);
+
+		$this->forget_finished_pages();
 
 		return is_numeric( $updated ) ? (int) $updated : 0;
 	}

@@ -20,7 +20,7 @@ Renamed to **Esmo Accessibility Scanner** for the WordPress.org directory, plus 
 - The import is recorded separately (`esmoas_legacy_import`, plus the tables already copied in `esmoas_legacy_import_tables`); if a copy fails, for example because of a database timeout, it is retried at most once an hour, or right away when a scan is started, and copies only the rows that are still missing. New scans wait until the import is complete, so imported and new rows never collide.
 
 ### Security
-- `esmoas_save_results` validates everything it receives: the page URL must be an http(s) URL on the site; a scan accepts at most one save per queued page and none after it has finished; at most 150 rules per group, 25 elements per rule and 2,500 rows per page; rule ids, impacts and text lengths are checked; non-scalar values are ignored.
+- `esmoas_save_results` validates everything it receives: the page URL must be an http(s) URL on the site and one the scan queued (new `esmoas_scan_pages` table); each queued page is claimed once, atomically, and takes its post id from the queue; nothing is accepted after the scan has finished; at most 150 rules per group, 25 elements per rule and 2,500 rows per page; rule ids, impacts and text lengths are checked; non-scalar values are ignored.
 - Single-page scans accept only content with a front-end view that the current user may read (`read_post`); otherwise the Run Scan page falls back to a full scan.
 - URLs added through `esmoas_scan_urls` must be http(s) URLs on the site; labels are plain text.
 - New `esmoas_settings_capability` filter (default `manage_options`), so opening the reports to other roles no longer opens the settings and automatic fixes.

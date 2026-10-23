@@ -123,7 +123,7 @@ The unminified axe-core 4.10.2 source is included as `assets/js/axe.js`. The pro
 * New: activating the plugin imports the scans, issues, score history and settings of Accessibility Guardian 1.2 and deactivates it. If the old plugin is still active somewhere (for example network-wide), only its automatic fixes run, so nothing is applied twice.
 * New: developer hooks use the `esmoas_` prefix. The `accg_` names still work but are deprecated.
 * New: `esmoas_settings_capability` filter. Settings, including the automatic fixes, stay limited to administrators even when the reports are opened to other roles.
-* Security: scan results sent by the browser are checked on the server. The page must belong to your site, each queued page can be saved only once, and the number of rules, elements and characters is limited.
+* Security: scan results sent by the browser are checked on the server. The page must be one the scan queued on your site, each page can be saved only once, and the number of rules, elements and characters is limited.
 * Security: single-page scans only accept content with a front-end view that the current user can read.
 * Security: exports send `X-Content-Type-Options: nosniff`, the scan frame can no longer submit forms, and only the bundled axe-core is used.
 * Fixed: finishing the same scan twice no longer adds two history entries.

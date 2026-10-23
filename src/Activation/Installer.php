@@ -31,7 +31,7 @@ final class Installer {
 	 *
 	 * @var array<int, string>
 	 */
-	public const TABLES = array( 'esmoas_scans', 'esmoas_issues', 'esmoas_history' );
+	public const TABLES = array( 'esmoas_scans', 'esmoas_issues', 'esmoas_history', 'esmoas_scan_pages' );
 
 	/**
 	 * Table/option prefix used up to 1.2.0, when the plugin was called "Accessibility Guardian".
@@ -303,6 +303,7 @@ final class Installer {
 		$scans           = $wpdb->prefix . 'esmoas_scans';
 		$issues          = $wpdb->prefix . 'esmoas_issues';
 		$history         = $wpdb->prefix . 'esmoas_history';
+		$pages           = $wpdb->prefix . 'esmoas_scan_pages';
 
 		$schema = array();
 
@@ -358,6 +359,15 @@ final class Installer {
 			created_at DATETIME NULL DEFAULT NULL,
 			PRIMARY KEY  (id),
 			KEY created_at (created_at)
+		) {$charset_collate};";
+
+		// Pages queued by running scans; each can be saved once. Rows are removed when a scan ends.
+		$schema[] = "CREATE TABLE {$pages} (
+			scan_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
+			url_hash CHAR(32) NOT NULL DEFAULT '',
+			post_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
+			saved TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+			PRIMARY KEY  (scan_id,url_hash)
 		) {$charset_collate};";
 
 		foreach ( $schema as $statement ) {

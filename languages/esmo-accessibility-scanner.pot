@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-23T13:03:06+00:00\n"
+"POT-Creation-Date: 2026-10-23T13:12:14+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: esmo-accessibility-scanner\n"
@@ -849,33 +849,36 @@ msgstr ""
 msgid "Unable to create a scan record."
 msgstr ""
 
-#: src/Scan/ScanController.php:163
+#: src/Scan/ScanController.php:165
 msgid "Invalid scan payload."
 msgstr ""
 
-#: src/Scan/ScanController.php:167
+#: src/Scan/ScanController.php:169
 msgid "Scan payload is too large."
 msgstr ""
 
-#: src/Scan/ScanController.php:173
-#: src/Scan/ScanController.php:188
-#: src/Scan/ScanController.php:273
+#: src/Scan/ScanController.php:175
+#: src/Scan/ScanController.php:277
 msgid "Scan is not running."
 msgstr ""
 
-#: src/Scan/ScanController.php:179
+#: src/Scan/ScanController.php:181
 msgid "Malformed scan payload."
 msgstr ""
 
-#: src/Scan/ScanController.php:183
+#: src/Scan/ScanController.php:185
 msgid "The scanned page is not on this site."
 msgstr ""
 
-#: src/Scan/ScanController.php:215
+#: src/Scan/ScanController.php:191
+msgid "This page is not waiting for results in this scan."
+msgstr ""
+
+#: src/Scan/ScanController.php:219
 msgid "Invalid scan id."
 msgstr ""
 
-#: src/Scan/ScanController.php:296
+#: src/Scan/ScanController.php:300
 msgid "You are not allowed to run scans."
 msgstr ""
 
