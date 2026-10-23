@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://esmobg.github.io/Accessibility-Guardian/sitemap.xml
+Sitemap: https://esmobg.github.io/Esmo-Accessibility-Scanner/sitemap.xml

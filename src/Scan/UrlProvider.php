@@ -2,12 +2,14 @@
 /**
  * Builds the list of URLs that a scan should visit.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Scan;
+namespace EsmoAccessibilityScanner\Scan;
+
+use EsmoAccessibilityScanner\Plugin;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -28,7 +30,7 @@ final class UrlProvider {
 	 */
 	public static function resolve_url_limit( int $requested = 0 ): int {
 		$default = $requested > 0 ? $requested : self::DEFAULT_URL_LIMIT;
-		$limit   = (int) apply_filters( 'accg_scan_url_limit', $default );
+		$limit   = (int) Plugin::filter( 'esmoas_scan_url_limit', $default );
 
 		return max( 1, min( 10000, $limit ) );
 	}
@@ -48,7 +50,7 @@ final class UrlProvider {
 		$urls[] = array(
 			'url'     => home_url( '/' ),
 			'post_id' => 0,
-			'label'   => __( 'Home page', 'accessibility-guardian' ),
+			'label'   => __( 'Home page', 'esmo-accessibility-scanner' ),
 		);
 
 		foreach ( $this->scannable_post_types() as $post_type ) {
@@ -73,10 +75,8 @@ final class UrlProvider {
 		 * @param array<int, array{url:string,post_id:int,label:string}> $urls  URLs to scan, in order.
 		 * @param int                                                    $limit Maximum number of URLs that will be scanned.
 		 */
-		$filtered = apply_filters( 'accg_scan_urls', $urls, $limit );
-		if ( is_array( $filtered ) ) {
-			$urls = $this->sanitize_entries( $filtered );
-		}
+		$filtered = Plugin::filter( 'esmoas_scan_urls', $urls, $limit );
+		$urls     = $this->sanitize_entries( is_array( $filtered ) ? $filtered : $urls );
 
 		$urls = $this->deduplicate( $urls );
 
@@ -84,7 +84,8 @@ final class UrlProvider {
 	}
 
 	/**
-	 * Keep only well-formed queue entries (used after the accg_scan_urls filter).
+	 * Keep only well-formed http(s) entries on this site (the queue is also
+	 * filterable through esmoas_scan_urls and is loaded in an admin session).
 	 *
 	 * @param array<int|string, mixed> $entries Raw entries.
 	 * @return array<int, array{url:string,post_id:int,label:string}>
@@ -93,18 +94,59 @@ final class UrlProvider {
 		$clean = array();
 
 		foreach ( $entries as $entry ) {
-			if ( ! is_array( $entry ) || empty( $entry['url'] ) || ! is_string( $entry['url'] ) ) {
+			if ( ! is_array( $entry ) || ! isset( $entry['url'] ) || ! is_string( $entry['url'] ) ) {
 				continue;
 			}
 
+			$url = esc_url_raw( $entry['url'], array( 'http', 'https' ) );
+			if ( '' === $url || ! self::is_site_url( $url ) ) {
+				continue;
+			}
+
+			$label = isset( $entry['label'] ) && is_scalar( $entry['label'] ) ? self::plain_text( (string) $entry['label'] ) : '';
+
 			$clean[] = array(
-				'url'     => $entry['url'],
-				'post_id' => isset( $entry['post_id'] ) ? (int) $entry['post_id'] : 0,
-				'label'   => isset( $entry['label'] ) && is_string( $entry['label'] ) && '' !== $entry['label'] ? $entry['label'] : $entry['url'],
+				'url'     => $url,
+				'post_id' => isset( $entry['post_id'] ) && is_scalar( $entry['post_id'] ) ? absint( $entry['post_id'] ) : 0,
+				'label'   => '' !== $label ? $label : $url,
 			);
 		}
 
 		return $clean;
+	}
+
+	/**
+	 * Whether a URL is an http(s) address on this site's host and port.
+	 *
+	 * @param string $url URL to check.
+	 */
+	public static function is_site_url( string $url ): bool {
+		$parts = wp_parse_url( $url );
+		$home  = wp_parse_url( home_url( '/' ) );
+
+		if ( ! is_array( $parts ) || ! is_array( $home ) || empty( $parts['host'] ) || empty( $home['host'] ) ) {
+			return false;
+		}
+
+		return in_array( strtolower( (string) ( $parts['scheme'] ?? '' ) ), array( 'http', 'https' ), true )
+			&& strtolower( (string) $parts['host'] ) === strtolower( (string) $home['host'] )
+			&& ( $parts['port'] ?? null ) === ( $home['port'] ?? null );
+	}
+
+	/**
+	 * The post for a single-page scan: it must have a front-end view and be
+	 * readable by the current user (drafts and private posts follow core rules).
+	 *
+	 * @param int $post_id Post identifier.
+	 */
+	public static function scannable_post( int $post_id ): ?\WP_Post {
+		$post = $post_id > 0 ? get_post( $post_id ) : null;
+
+		if ( ! $post instanceof \WP_Post || ! is_post_type_viewable( $post->post_type ) || ! current_user_can( 'read_post', $post->ID ) ) {
+			return null;
+		}
+
+		return $post;
 	}
 
 	/**
@@ -114,19 +156,29 @@ final class UrlProvider {
 	 * @return array<int, array{url:string,post_id:int,label:string}>
 	 */
 	public function get_single_post_urls( int $post_id ): array {
-		$permalink = get_permalink( $post_id );
-
-		if ( false === $permalink ) {
+		$post = self::scannable_post( $post_id );
+		if ( null === $post ) {
 			return array();
 		}
 
-		return array(
+		return $this->sanitize_entries(
 			array(
-				'url'     => $permalink,
-				'post_id' => $post_id,
-				'label'   => get_the_title( $post_id ),
-			),
+				array(
+					'url'     => get_permalink( $post->ID ),
+					'post_id' => $post->ID,
+					'label'   => get_the_title( $post->ID ),
+				),
+			)
 		);
+	}
+
+	/**
+	 * Titles and term names as plain text: the scan log shows them with textContent.
+	 *
+	 * @param string $value Title or label, possibly with markup or entities.
+	 */
+	private static function plain_text( string $value ): string {
+		return html_entity_decode( wp_strip_all_tags( $value ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 	}
 
 	/**
@@ -135,7 +187,7 @@ final class UrlProvider {
 	 * @return array<int, string>
 	 */
 	public function scannable_post_types(): array {
-		$settings   = (array) get_option( 'accg_settings', array() );
+		$settings   = (array) get_option( 'esmoas_settings', array() );
 		$configured = isset( $settings['include_post_types'] ) && is_array( $settings['include_post_types'] )
 			? array_map( 'strval', $settings['include_post_types'] )
 			: array();
@@ -236,7 +288,7 @@ final class UrlProvider {
 				'post_id' => 0,
 				'label'   => sprintf(
 					/* translators: 1: taxonomy name, 2: term name. */
-					__( '%1$s: %2$s', 'accessibility-guardian' ),
+					__( '%1$s: %2$s', 'esmo-accessibility-scanner' ),
 					$term->taxonomy,
 					$term->name
 				),
@@ -250,7 +302,7 @@ final class UrlProvider {
 	 * Whether term archives should be included, per settings.
 	 */
 	private function include_terms(): bool {
-		$settings = (array) get_option( 'accg_settings', array() );
+		$settings = (array) get_option( 'esmoas_settings', array() );
 
 		return ! empty( $settings['include_terms'] );
 	}

@@ -1,5 +1,5 @@
 /**
- * Accessibility Guardian - browser scan orchestrator.
+ * Esmo Accessibility Scanner - browser scan orchestrator.
  *
  * Loads each queued URL into a hidden same-origin iframe, runs axe-core
  * (plus supplemental custom rules) against the rendered DOM, and streams
@@ -8,7 +8,7 @@
 ( function () {
 	'use strict';
 
-	var settings = window.accgScanner || {};
+	var settings = window.esmoasScanner || {};
 	var ajaxUrl = settings.ajaxUrl;
 	var nonce = settings.nonce;
 	var i18n = settings.i18n || {};
@@ -75,7 +75,7 @@
 			return;
 		}
 		var li = document.createElement( 'li' );
-		li.className = 'ag-log__item' + ( type ? ' ag-log__item--' + type : '' );
+		li.className = 'esmoas-log__item' + ( type ? ' esmoas-log__item--' + type : '' );
 		li.textContent = text;
 		els.log.appendChild( li );
 		els.log.scrollTop = els.log.scrollHeight;
@@ -100,7 +100,7 @@
 		var context = { exclude: [ [ '#wpadminbar' ] ] };
 
 		return axe.run( context, options ).then( function ( results ) {
-			var custom = window.accgCustomRules ? window.accgCustomRules.run( frameDocument ) : { violations: [] };
+			var custom = window.esmoasCustomRules ? window.esmoasCustomRules.run( frameDocument ) : { violations: [] };
 
 			return {
 				violations: results.violations.concat( custom.violations || [] ),
@@ -110,21 +110,60 @@
 		} );
 	}
 
-	function compactResult( result ) {
-		return ( result || [] ).map( function ( rule ) {
+	/**
+	 * Shorten text by code points so an emoji is never split in half: a lone
+	 * surrogate makes the JSON invalid for PHP and the whole page would be lost.
+	 */
+	function clip( text, max ) {
+		var value = String( text || '' );
+		if ( typeof value.toWellFormed === 'function' ) {
+			value = value.toWellFormed();
+		}
+		if ( value.length <= max ) {
+			return value;
+		}
+		return Array.from( value ).slice( 0, max ).join( '' );
+	}
+
+	/**
+	 * Detail kept per page, from full to minimal. The first level is what the
+	 * server stores at most (150 rules per group, 25 elements per rule); the
+	 * last one always fits the server's 512 KB limit.
+	 */
+	var PAYLOAD_LEVELS = [
+		{ rules: 150, nodes: 25, html: 2000, text: 1000, help: 500, target: 1000 },
+		{ rules: 150, nodes: 5, html: 300, text: 300, help: 500, target: 500 },
+		{ rules: 100, nodes: 1, html: 150, text: 100, help: 200, target: 300 },
+		{ rules: 50, nodes: 1, html: 0, text: 0, help: 200, target: 200 }
+	];
+	var PAYLOAD_LIMIT = 500000;
+
+	/**
+	 * An axe target (selectors, nested for shadow DOM) as one shortened selector
+	 * path; the server joins the parts the same way.
+	 */
+	function clipTarget( target, max ) {
+		var parts = ( Array.isArray( target ) ? target : [ target ] ).map( function ( part ) {
+			return Array.isArray( part ) ? part.join( ' ' ) : String( part || '' );
+		} );
+		return [ clip( parts.join( ' > ' ), max ) ];
+	}
+
+	function compactResult( result, level ) {
+		return ( result || [] ).slice( 0, level.rules ).map( function ( rule ) {
 			var tags = rule.tags || [];
 			return {
 				id: rule.id,
 				impact: rule.impact || '',
-				help: rule.help || '',
+				help: clip( rule.help, level.help ),
 				bestPractice: tags.indexOf( 'best-practice' ) !== -1 && ! tags.some( function ( tag ) {
 					return /^wcag/.test( tag );
 				} ),
-				nodes: ( rule.nodes || [] ).slice( 0, 25 ).map( function ( node ) {
+				nodes: ( rule.nodes || [] ).slice( 0, level.nodes ).map( function ( node ) {
 					return {
-						html: node.html || '',
-						target: node.target || [],
-						failureSummary: node.failureSummary || ''
+						html: clip( node.html, level.html ),
+						target: clipTarget( node.target, level.target ),
+						failureSummary: clip( node.failureSummary, level.text )
 					};
 				} )
 			};
@@ -132,17 +171,34 @@
 	}
 
 	/**
-	 * Inject axe-core into the frame document (by URL, same-origin) and wait
-	 * until the axe global is available inside the frame.
+	 * JSON body for one page: the most detailed level that stays under the limit.
+	 */
+	function payloadFor( entry, results ) {
+		var body = '';
+
+		for ( var i = 0; i < PAYLOAD_LEVELS.length; i++ ) {
+			body = JSON.stringify( {
+				url: entry.url,
+				post_id: entry.post_id,
+				violations: compactResult( results.violations, PAYLOAD_LEVELS[ i ] ),
+				incomplete: compactResult( results.incomplete, PAYLOAD_LEVELS[ i ] )
+			} );
+
+			if ( new TextEncoder().encode( body ).length <= PAYLOAD_LIMIT ) {
+				break;
+			}
+		}
+
+		return body;
+	}
+
+	/**
+	 * Inject the bundled axe-core into the frame document (by URL, same-origin)
+	 * and wait until the axe global is available inside the frame. A copy of
+	 * axe that the page itself provides is never trusted.
 	 */
 	function injectAxe( ctx ) {
 		return new Promise( function ( resolve, reject ) {
-			// Reuse an axe instance only if it is the exact version bundled with the plugin.
-			if ( ctx.win.axe && ctx.win.axe.version === settings.axeVersion ) {
-				resolve( ctx );
-				return;
-			}
-
 			var doc = ctx.doc;
 			var script = doc.createElement( 'script' );
 			script.src = settings.axeUrl;
@@ -212,16 +268,9 @@
 			.then( function ( results ) {
 				state.passes += results.passes;
 
-				var payload = {
-					url: entry.url,
-					post_id: entry.post_id,
-					violations: compactResult( results.violations ),
-					incomplete: compactResult( results.incomplete )
-				};
-
-				return post( 'accg_save_results', {
+				return post( 'esmoas_save_results', {
 					scan_id: state.scanId,
-					payload: JSON.stringify( payload )
+					payload: payloadFor( entry, results )
 				} ).then( function ( res ) {
 					if ( ! res || ! res.success ) {
 						state.failures += 1;
@@ -245,7 +294,7 @@
 	}
 
 	function finish() {
-		post( 'accg_finish_scan', {
+		post( 'esmoas_finish_scan', {
 			scan_id: state.scanId,
 			passes: state.passes,
 			cancelled: state.cancelled ? 1 : 0
@@ -287,23 +336,23 @@
 			}
 		};
 
-		fill( 'ag-result-score', data.score + '/100' );
-		fill( 'ag-result-band', data.band && data.band.label ? data.band.label : '' );
-		fill( 'ag-result-critical', counts.critical || 0 );
-		fill( 'ag-result-major', counts.major || 0 );
-		fill( 'ag-result-minor', counts.minor || 0 );
-		fill( 'ag-result-warning', counts.warning || 0 );
+		fill( 'esmoas-result-score', data.score + '/100' );
+		fill( 'esmoas-result-band', data.band && data.band.label ? data.band.label : '' );
+		fill( 'esmoas-result-critical', counts.critical || 0 );
+		fill( 'esmoas-result-major', counts.major || 0 );
+		fill( 'esmoas-result-minor', counts.minor || 0 );
+		fill( 'esmoas-result-warning', counts.warning || 0 );
 
 		// Point "Review issues" at this scan, which matters for cancelled (partial) scans.
-		var issuesLink = document.getElementById( 'ag-result-issues' );
+		var issuesLink = document.getElementById( 'esmoas-result-issues' );
 		if ( issuesLink && state.scanId ) {
 			var href = issuesLink.getAttribute( 'href' ) || '';
 			issuesLink.setAttribute( 'href', href.split( '&scan_id=' )[ 0 ] + '&scan_id=' + encodeURIComponent( state.scanId ) );
 		}
 
-		var badge = document.getElementById( 'ag-result-badge' );
+		var badge = document.getElementById( 'esmoas-result-badge' );
 		if ( badge && data.band && data.band.key ) {
-			badge.className = 'ag-result__badge ag-result__badge--' + data.band.key;
+			badge.className = 'esmoas-result__badge esmoas-result__badge--' + data.band.key;
 		}
 
 		els.result.hidden = false;
@@ -345,7 +394,7 @@
 		toggleControls( true );
 		setProgress( 0, 1, t( 'preparing', 'Preparing scan…' ) );
 
-		post( 'accg_start_scan', { scan_type: scanType, post_id: postId || 0 } )
+		post( 'esmoas_start_scan', { scan_type: scanType, post_id: postId || 0 } )
 			.then( function ( res ) {
 				if ( ! res || ! res.success || ! res.data || ! res.data.queue ) {
 					throw new Error( ( res && res.data && res.data.message ) || '' );
@@ -365,16 +414,16 @@
 	}
 
 	function init() {
-		els.frame = document.getElementById( 'ag-scan-frame' );
-		els.start = document.getElementById( 'ag-start-scan' );
-		els.cancel = document.getElementById( 'ag-cancel-scan' );
-		els.bar = document.getElementById( 'ag-progress-bar' );
-		els.track = document.getElementById( 'ag-progress-track' );
-		els.count = document.getElementById( 'ag-progress-count' );
-		els.message = document.getElementById( 'ag-progress-message' );
-		els.progressWrap = document.getElementById( 'ag-progress' );
-		els.log = document.getElementById( 'ag-scan-log' );
-		els.result = document.getElementById( 'ag-scan-result' );
+		els.frame = document.getElementById( 'esmoas-scan-frame' );
+		els.start = document.getElementById( 'esmoas-start-scan' );
+		els.cancel = document.getElementById( 'esmoas-cancel-scan' );
+		els.bar = document.getElementById( 'esmoas-progress-bar' );
+		els.track = document.getElementById( 'esmoas-progress-track' );
+		els.count = document.getElementById( 'esmoas-progress-count' );
+		els.message = document.getElementById( 'esmoas-progress-message' );
+		els.progressWrap = document.getElementById( 'esmoas-progress' );
+		els.log = document.getElementById( 'esmoas-scan-log' );
+		els.result = document.getElementById( 'esmoas-scan-result' );
 
 		if ( ! els.frame || ! els.start ) {
 			return;

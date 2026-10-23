@@ -2,19 +2,19 @@
 /**
  * Tests for the result normalizer.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Tests;
+namespace EsmoAccessibilityScanner\Tests;
 
-use AccessibilityGuardian\Rules\RuleCatalog;
-use AccessibilityGuardian\Scan\ResultNormalizer;
+use EsmoAccessibilityScanner\Rules\RuleCatalog;
+use EsmoAccessibilityScanner\Scan\ResultNormalizer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \AccessibilityGuardian\Scan\ResultNormalizer
+ * @covers \EsmoAccessibilityScanner\Scan\ResultNormalizer
  */
 final class ResultNormalizerTest extends TestCase {
 
@@ -196,6 +196,77 @@ final class ResultNormalizerTest extends TestCase {
 			'&lt;ul&gt; and &lt;ol&gt; must only directly contain &lt;li&gt;, &lt;script&gt; or &lt;template&gt; elements',
 			$issues[0]['message']
 		);
+	}
+
+	public function test_rows_per_page_are_capped(): void {
+		$violations = array();
+		for ( $i = 0; $i < 300; $i++ ) {
+			$violations[] = array(
+				'id'     => 'image-alt',
+				'impact' => 'critical',
+				'nodes'  => array_fill( 0, 40, array( 'target' => array( 'img' ) ) ),
+			);
+		}
+
+		$issues = $this->normalizer->normalize(
+			array(
+				'url'        => 'https://example.com/',
+				'violations' => $violations,
+			)
+		);
+
+		$this->assertCount( ResultNormalizer::MAX_ROWS, $issues );
+	}
+
+	public function test_results_and_nodes_are_capped(): void {
+		$issues = $this->normalizer->normalize(
+			array(
+				'url'        => 'https://example.com/',
+				'violations' => array(
+					array(
+						'id'    => 'image-alt',
+						'nodes' => array_fill( 0, 100, array( 'target' => array( 'img' ) ) ),
+					),
+				),
+			)
+		);
+
+		$this->assertCount( ResultNormalizer::MAX_NODES, $issues );
+	}
+
+	public function test_malformed_results_are_skipped_and_values_checked(): void {
+		$issues = $this->normalizer->normalize(
+			array(
+				'url'        => 'https://example.com/',
+				'post_id'    => array( 5 ),
+				'violations' => array(
+					array( 'id' => array( 'image-alt' ) ),
+					array( 'id' => '' ),
+					'not-a-result',
+					array(
+						'id'           => 'color-contrast',
+						'impact'       => 'catastrophic-and-much-longer-than-twenty',
+						'help'         => array( 'x' ),
+						'bestPractice' => 'yes',
+						'nodes'        => array(
+							array(
+								'html'           => array( 'x' ),
+								'target'         => array( array( 'my-widget', array( 'nested' ) ), 'button' ),
+								'failureSummary' => array(),
+							),
+						),
+					),
+				),
+			)
+		);
+
+		$this->assertCount( 1, $issues );
+		$this->assertSame( 'color-contrast', $issues[0]['rule_id'] );
+		$this->assertSame( '', $issues[0]['impact'] );
+		$this->assertSame( 0, $issues[0]['post_id'] );
+		$this->assertSame( '', $issues[0]['html_snippet'] );
+		$this->assertSame( 'my-widget > button', $issues[0]['dom_path'] );
+		$this->assertNotSame( 'warning', $issues[0]['severity'], 'Only a real boolean marks a best-practice rule.' );
 	}
 
 	public function test_severity_counts_aggregate_correctly(): void {

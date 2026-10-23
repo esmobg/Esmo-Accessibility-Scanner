@@ -1,5 +1,5 @@
 /**
- * Accessibility Guardian website: progressive enhancements.
+ * Esmo Accessibility Scanner website: progressive enhancements.
  * The page is fully usable without this script.
  */
 ( function () {
@@ -54,7 +54,7 @@
 			var next = isDark() ? 'light' : 'dark';
 			root.setAttribute( 'data-theme', next );
 			try {
-				localStorage.setItem( 'accg-theme', next );
+				localStorage.setItem( 'esmo-theme', next );
 			} catch ( e ) {}
 			sync();
 		} );

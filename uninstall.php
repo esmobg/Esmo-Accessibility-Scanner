@@ -1,11 +1,11 @@
 <?php
 /**
- * Uninstall routine for Accessibility Guardian.
+ * Uninstall routine for Esmo Accessibility Scanner.
  *
  * Removes custom tables and stored options when the plugin is deleted,
  * on every site of a multisite network.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
@@ -13,35 +13,64 @@ declare(strict_types=1);
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
 /**
- * Remove the plugin's tables and options from the current site.
+ * Whether Accessibility Guardian (1.2.0 and earlier) is still installed. Its
+ * tables and options then belong to it and are kept, so it can be reactivated.
  */
-function accg_uninstall_site(): void {
-	global $wpdb;
-
-	foreach ( array( 'accg_scans', 'accg_issues', 'accg_history' ) as $accg_suffix ) {
-		$accg_table = $wpdb->prefix . $accg_suffix;
-		// Table name cannot be parameterized; it is the site prefix plus a hardcoded suffix.
-		$wpdb->query( "DROP TABLE IF EXISTS {$accg_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,PluginCheck.Security.DirectDB.UnescapedDBParameter
+function esmoas_legacy_plugin_installed(): bool {
+	if ( ! function_exists( 'get_plugins' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 	}
 
-	delete_option( 'accg_settings' );
-	delete_option( 'accg_db_version' );
-	delete_transient( 'accg_settings_notice' );
+	return isset( get_plugins( '/accessibility-guardian' )['accessibility-guardian.php'] );
 }
 
+/**
+ * Remove the plugin's tables and options from the current site.
+ *
+ * @param bool $remove_legacy Also remove leftovers of Accessibility Guardian (prefix accg_).
+ */
+function esmoas_uninstall_site( bool $remove_legacy ): void {
+	global $wpdb;
+
+	$esmoas_suffixes = array( 'esmoas_scans', 'esmoas_issues', 'esmoas_history', 'esmoas_scan_pages' );
+	if ( $remove_legacy ) {
+		$esmoas_suffixes = array_merge( $esmoas_suffixes, array( 'accg_scans', 'accg_issues', 'accg_history' ) );
+	}
+
+	foreach ( $esmoas_suffixes as $esmoas_suffix ) {
+		$esmoas_table = $wpdb->prefix . $esmoas_suffix;
+		// Table name cannot be parameterized; it is the site prefix plus a hardcoded suffix.
+		$wpdb->query( "DROP TABLE IF EXISTS {$esmoas_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,PluginCheck.Security.DirectDB.UnescapedDBParameter
+	}
+
+	delete_option( 'esmoas_settings' );
+	delete_option( 'esmoas_db_version' );
+	delete_option( 'esmoas_legacy_import' );
+	delete_option( 'esmoas_legacy_import_tables' );
+	delete_transient( 'esmoas_legacy_import_retry' );
+
+	if ( $remove_legacy ) {
+		delete_option( 'accg_settings' );
+		delete_option( 'accg_db_version' );
+		delete_transient( 'accg_settings_notice' );
+	}
+}
+
+$esmoas_remove_legacy = ! esmoas_legacy_plugin_installed();
+
 if ( is_multisite() ) {
-	$accg_site_ids = get_sites(
+	$esmoas_site_ids = get_sites(
 		array(
 			'fields' => 'ids',
 			'number' => 0,
 		)
 	);
 
-	foreach ( $accg_site_ids as $accg_site_id ) {
-		switch_to_blog( (int) $accg_site_id );
-		accg_uninstall_site();
+	foreach ( $esmoas_site_ids as $esmoas_site_id ) {
+		switch_to_blog( (int) $esmoas_site_id );
+		esmoas_uninstall_site( $esmoas_remove_legacy );
 		restore_current_blog();
 	}
 } else {
-	accg_uninstall_site();
+	esmoas_uninstall_site( $esmoas_remove_legacy );
 }

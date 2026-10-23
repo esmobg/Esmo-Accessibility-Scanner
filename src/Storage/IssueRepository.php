@@ -2,36 +2,32 @@
 /**
  * Data access layer for accessibility issue records.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Storage;
+namespace EsmoAccessibilityScanner\Storage;
 
 defined( 'ABSPATH' ) || exit;
 
-// Custom accg_issues table; identifiers are $wpdb->prefix plus a hardcoded suffix.
+// Custom esmoas_issues table; identifiers are $wpdb->prefix plus a hardcoded suffix.
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching
 // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 /**
- * Reads and writes issue rows in the accg_issues table.
+ * Reads and writes issue rows in the esmoas_issues table.
  */
 final class IssueRepository {
 
 	/**
-	 * Fully-qualified table name.
+	 * Issues table of the current site (resolved per call, so switch_to_blog() is respected).
 	 */
-	private string $table;
-
-	/**
-	 * Constructor.
-	 */
-	public function __construct() {
+	private function table(): string {
 		global $wpdb;
-		$this->table = $wpdb->prefix . 'accg_issues';
+
+		return $wpdb->prefix . 'esmoas_issues';
 	}
 
 	/**
@@ -39,17 +35,17 @@ final class IssueRepository {
 	 *
 	 * @param int                                   $scan_id Scan id.
 	 * @param array<int, array<string, mixed>>      $issues  Normalized issue rows.
-	 * @return int Number of rows inserted.
+	 * @return array<int, int> Ids of the rows inserted.
 	 */
-	public function insert_batch( int $scan_id, array $issues ): int {
+	public function insert_batch( int $scan_id, array $issues ): array {
 		global $wpdb;
 
-		$count = 0;
-		$now   = current_time( 'mysql' );
+		$ids = array();
+		$now = current_time( 'mysql' );
 
 		foreach ( $issues as $issue ) {
 			$inserted = $wpdb->insert(
-				$this->table,
+				$this->table(),
 				array(
 					'scan_id'        => $scan_id,
 					'url'            => esc_url_raw( (string) ( $issue['url'] ?? '' ) ),
@@ -72,11 +68,32 @@ final class IssueRepository {
 			);
 
 			if ( $inserted ) {
-				++$count;
+				$ids[] = (int) $wpdb->insert_id;
 			}
 		}
 
-		return $count;
+		return $ids;
+	}
+
+	/**
+	 * Remove rows of a scan again (used when a page's results cannot be stored completely).
+	 *
+	 * @param int             $scan_id Scan id.
+	 * @param array<int, int> $ids     Row ids returned by insert_batch().
+	 */
+	public function delete_ids( int $scan_id, array $ids ): void {
+		global $wpdb;
+
+		foreach ( $ids as $id ) {
+			$wpdb->delete(
+				$this->table(),
+				array(
+					'id'      => (int) $id,
+					'scan_id' => $scan_id,
+				),
+				array( '%d', '%d' )
+			);
+		}
 	}
 
 	/**
@@ -113,7 +130,7 @@ final class IssueRepository {
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT severity, COUNT(*) AS total FROM {$this->table} WHERE scan_id = %d GROUP BY severity", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT severity, COUNT(*) AS total FROM {$this->table()} WHERE scan_id = %d GROUP BY severity", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$scan_id
 			),
 			ARRAY_A
@@ -146,7 +163,7 @@ final class IssueRepository {
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT url, severity, COUNT(*) AS total FROM {$this->table} WHERE scan_id = %d GROUP BY url, severity",
+				"SELECT url, severity, COUNT(*) AS total FROM {$this->table()} WHERE scan_id = %d GROUP BY url, severity",
 				$scan_id
 			),
 			ARRAY_A
@@ -188,7 +205,7 @@ final class IssueRepository {
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT category, COUNT(*) AS total FROM {$this->table} WHERE scan_id = %d GROUP BY category ORDER BY total DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT category, COUNT(*) AS total FROM {$this->table()} WHERE scan_id = %d GROUP BY category ORDER BY total DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$scan_id
 			),
 			ARRAY_A
@@ -217,7 +234,7 @@ final class IssueRepository {
 
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT rule_id, wcag_ref, severity, COUNT(*) AS total FROM {$this->table} WHERE scan_id = %d GROUP BY rule_id, wcag_ref, severity ORDER BY total DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT rule_id, wcag_ref, severity, COUNT(*) AS total FROM {$this->table()} WHERE scan_id = %d GROUP BY rule_id, wcag_ref, severity ORDER BY total DESC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$scan_id,
 				$limit
 			),
@@ -244,7 +261,7 @@ final class IssueRepository {
 		if ( '' !== $severity ) {
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$this->table} WHERE scan_id = %d AND severity = %s ORDER BY FIELD(severity,'critical','major','minor','warning'), id ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT * FROM {$this->table()} WHERE scan_id = %d AND severity = %s ORDER BY FIELD(severity,'critical','major','minor','warning'), id ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$scan_id,
 					$severity,
 					$per_page,
@@ -255,7 +272,7 @@ final class IssueRepository {
 		} else {
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$this->table} WHERE scan_id = %d ORDER BY FIELD(severity,'critical','major','minor','warning'), id ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT * FROM {$this->table()} WHERE scan_id = %d ORDER BY FIELD(severity,'critical','major','minor','warning'), id ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$scan_id,
 					$per_page,
 					$offset
@@ -277,7 +294,7 @@ final class IssueRepository {
 
 		return (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$this->table} WHERE scan_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT COUNT(*) FROM {$this->table()} WHERE scan_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$scan_id
 			)
 		);

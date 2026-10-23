@@ -7,12 +7,12 @@
  * fields, low contrast, skipped heading levels, PDF and new-window links).
  *
  * Only runs when loaded by bin/screenshots/blueprint.json, which defines
- * ACCG_DEMO_CONTENT first. Requested over HTTP it does nothing.
+ * ESMOAS_DEMO_CONTENT first. Requested over HTTP it does nothing.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
-if ( ! defined( 'ACCG_DEMO_CONTENT' ) ) {
+if ( ! defined( 'ESMOAS_DEMO_CONTENT' ) ) {
 	exit;
 }
 
@@ -23,7 +23,7 @@ update_option( 'permalink_structure', '/%postname%/' );
 update_option( 'blogname', 'Riverside Bakery' );
 update_option( 'blogdescription', 'Fresh bread every morning' );
 
-$accg_demo_items = array(
+$esmoas_demo_items = array(
 	array(
 		'page',
 		'About Us',
@@ -76,19 +76,19 @@ $accg_demo_items = array(
 	),
 );
 
-foreach ( $accg_demo_items as $accg_demo_item ) {
-	list( $accg_demo_type, $accg_demo_title, $accg_demo_content ) = $accg_demo_item;
+foreach ( $esmoas_demo_items as $esmoas_demo_item ) {
+	list( $esmoas_demo_type, $esmoas_demo_title, $esmoas_demo_content ) = $esmoas_demo_item;
 
-	if ( get_page_by_path( sanitize_title( $accg_demo_title ), OBJECT, $accg_demo_type ) ) {
+	if ( get_page_by_path( sanitize_title( $esmoas_demo_title ), OBJECT, $esmoas_demo_type ) ) {
 		continue;
 	}
 
 	wp_insert_post(
 		array(
-			'post_type'    => $accg_demo_type,
+			'post_type'    => $esmoas_demo_type,
 			'post_status'  => 'publish',
-			'post_title'   => $accg_demo_title,
-			'post_content' => $accg_demo_content,
+			'post_title'   => $esmoas_demo_title,
+			'post_content' => $esmoas_demo_content,
 		)
 	);
 }

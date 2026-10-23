@@ -2,12 +2,12 @@
 /**
  * Accessibility score calculation.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Scan;
+namespace EsmoAccessibilityScanner\Scan;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -106,27 +106,27 @@ final class ScoreCalculator {
 		if ( $score >= 95 ) {
 			return array(
 				'key'   => 'excellent',
-				'label' => __( 'Excellent', 'accessibility-guardian' ),
+				'label' => __( 'Excellent', 'esmo-accessibility-scanner' ),
 			);
 		}
 
 		if ( $score >= 80 ) {
 			return array(
 				'key'   => 'good',
-				'label' => __( 'Good', 'accessibility-guardian' ),
+				'label' => __( 'Good', 'esmo-accessibility-scanner' ),
 			);
 		}
 
 		if ( $score >= 60 ) {
 			return array(
 				'key'   => 'needs-improvement',
-				'label' => __( 'Needs Improvement', 'accessibility-guardian' ),
+				'label' => __( 'Needs Improvement', 'esmo-accessibility-scanner' ),
 			);
 		}
 
 		return array(
 			'key'   => 'poor',
-			'label' => __( 'Poor', 'accessibility-guardian' ),
+			'label' => __( 'Poor', 'esmo-accessibility-scanner' ),
 		);
 	}
 }

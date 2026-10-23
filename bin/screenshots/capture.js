@@ -3,7 +3,7 @@
  *
  * 1. Build and unpack the plugin:   python bin/build-zip.py --dir .build
  * 2. Start Playground (see README "Regenerating screenshots"), using
- *    bin/screenshots/blueprint.json and mounting bin/screenshots at /wordpress/accg-tools.
+ *    bin/screenshots/blueprint.json and mounting bin/screenshots at /wordpress/esmoas-tools.
  * 3. Run:  node bin/screenshots/capture.js [baseUrl] [outDir]
  *    (requires the `playwright` package and its Chromium build).
  *
@@ -22,9 +22,9 @@ const admin = ( page ) => `${ base }/wp-admin/admin.php?page=${ page }`;
 
 async function runScan( page ) {
 	console.log( 'running a full-site scan…' );
-	await page.goto( admin( 'accessibility-guardian-scan' ) );
-	await page.click( '#ag-start-scan' );
-	await page.waitForSelector( '#ag-scan-result:not([hidden])', { timeout: 10 * 60 * 1000 } );
+	await page.goto( admin( 'esmo-accessibility-scanner-scan' ) );
+	await page.click( '#esmoas-start-scan' );
+	await page.waitForSelector( '#esmoas-scan-result:not([hidden])', { timeout: 10 * 60 * 1000 } );
 }
 
 /**
@@ -34,11 +34,11 @@ async function runScan( page ) {
 async function enableFixes( context, keys ) {
 	console.log( 'enabling fixes:', keys.join( ', ' ) );
 	const page = await context.newPage();
-	await page.goto( admin( 'accessibility-guardian-settings' ) );
+	await page.goto( admin( 'esmo-accessibility-scanner-settings' ) );
 	for ( const key of keys ) {
 		await page.check( `input[name="fixes[]"][value="${ key }"]` );
 	}
-	await page.locator( '#accg_settings_submit' ).click();
+	await page.locator( '#esmoas_settings_submit' ).click();
 	await page.waitForLoadState( 'load' );
 	await page.close();
 }
@@ -67,7 +67,7 @@ const FIXED_PAGES = {
 
 async function fixPage( page, slug ) {
 	console.log( 'publishing a corrected version of', slug );
-	await page.goto( admin( 'accessibility-guardian' ) );
+	await page.goto( admin( 'esmo-accessibility-scanner' ) );
 	const ok = await page.evaluate(
 		async ( { slug: pageSlug, content } ) => {
 			const nonce = await ( await fetch( '/wp-admin/admin-ajax.php?action=rest-nonce' ) ).text();
@@ -97,7 +97,7 @@ async function shot( page, name, options = {} ) {
 
 	// Playground's "login": true signs the first visitor in automatically.
 	await page.goto( `${ base }/` );
-	await page.goto( admin( 'accessibility-guardian' ) );
+	await page.goto( admin( 'esmo-accessibility-scanner' ) );
 	if ( page.url().includes( 'wp-login.php' ) ) {
 		throw new Error( 'Not logged in. Start Playground with the bundled blueprint (it sets "login": true).' );
 	}
@@ -111,14 +111,14 @@ async function shot( page, name, options = {} ) {
 	await runScan( page );
 	await shot( page, 'screenshot-2.png' );
 
-	await page.goto( admin( 'accessibility-guardian' ) );
+	await page.goto( admin( 'esmo-accessibility-scanner' ) );
 	await shot( page, 'screenshot-1.png' );
 
-	await page.goto( admin( 'accessibility-guardian-issues' ) );
+	await page.goto( admin( 'esmo-accessibility-scanner-issues' ) );
 	await shot( page, 'screenshot-3.png' );
 
 	await page.setViewportSize( { width: 1280, height: 1000 } );
-	await page.goto( admin( 'accessibility-guardian-settings' ) );
+	await page.goto( admin( 'esmo-accessibility-scanner-settings' ) );
 	await shot( page, 'screenshot-4.png' );
 
 	await browser.close();

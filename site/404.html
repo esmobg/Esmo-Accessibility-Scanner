@@ -3,30 +3,25 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Page not found / Страницата не е намерена – Accessibility Guardian</title>
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+	<meta name="referrer" content="strict-origin-when-cross-origin">
+	<title>Page not found / Страницата не е намерена – Esmo Accessibility Scanner</title>
 	<meta name="robots" content="noindex">
-	<link rel="icon" href="/Accessibility-Guardian/assets/img/icon.svg" type="image/svg+xml">
-	<script>
-		try {
-			var accgTheme = localStorage.getItem( 'accg-theme' );
-			if ( accgTheme === 'light' || accgTheme === 'dark' ) {
-				document.documentElement.setAttribute( 'data-theme', accgTheme );
-			}
-		} catch ( e ) {}
-	</script>
-	<link rel="stylesheet" href="/Accessibility-Guardian/assets/css/site.css">
+	<link rel="icon" href="/Esmo-Accessibility-Scanner/assets/img/icon.svg" type="image/svg+xml">
+	<script src="/Esmo-Accessibility-Scanner/assets/js/theme-init.js"></script>
+	<link rel="stylesheet" href="/Esmo-Accessibility-Scanner/assets/css/site.css">
 </head>
 <body>
-	<main id="content" class="final-cta" style="min-height: 100vh; display: grid; place-items: center;">
+	<main id="content" class="final-cta page-404">
 		<div class="container container--narrow">
-			<img src="/Accessibility-Guardian/assets/img/icon.svg" alt="" width="96" height="96">
+			<img src="/Esmo-Accessibility-Scanner/assets/img/icon.svg" alt="" width="96" height="96">
 			<h1>Page not found <span lang="bg">/ Страницата не е намерена</span></h1>
 			<p>The page you were looking for does not exist or has moved.</p>
 			<p lang="bg">Страницата, която търсите, не съществува или е преместена.</p>
 			<div class="cta cta--center">
-				<a class="button button--primary" href="/Accessibility-Guardian/">Home page (English)</a>
-				<a class="button button--primary" href="/Accessibility-Guardian/bg/" lang="bg">Начална страница (български)</a>
-				<a class="button button--ghost" href="https://github.com/esmobg/Accessibility-Guardian">GitHub</a>
+				<a class="button button--primary" href="/Esmo-Accessibility-Scanner/">Home page (English)</a>
+				<a class="button button--primary" href="/Esmo-Accessibility-Scanner/bg/" lang="bg">Начална страница (български)</a>
+				<a class="button button--ghost" href="https://github.com/esmobg/Esmo-Accessibility-Scanner">GitHub</a>
 			</div>
 		</div>
 	</main>

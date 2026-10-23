@@ -1,5 +1,5 @@
 /**
- * Accessibility Guardian - front-end automatic fixes.
+ * Esmo Accessibility Scanner - front-end automatic fixes.
  *
  * Applies opt-in DOM remediations based on flags supplied by the server.
  * CSS-only fixes are handled via body classes, not here. Fixes are re-applied
@@ -9,7 +9,7 @@
 ( function () {
 	'use strict';
 
-	var config = window.accgFixes || {};
+	var config = window.esmoasFixes || {};
 	var flags = config.flags || {};
 	var i18n = config.i18n || {};
 
@@ -80,7 +80,7 @@
 	function newWindowWarning( root ) {
 		var notice = i18n.newWindow || '(opens in a new window)';
 		each( root, 'a[target="_blank"]', function ( link ) {
-			if ( link.getAttribute( 'data-accg-new-window' ) ) {
+			if ( link.getAttribute( 'data-esmoas-new-window' ) ) {
 				return;
 			}
 			var label = ( link.getAttribute( 'aria-label' ) || link.textContent || '' ).toLowerCase();
@@ -88,13 +88,13 @@
 				return;
 			}
 			var span = document.createElement( 'span' );
-			span.className = 'screen-reader-text accg-new-window-note';
+			span.className = 'screen-reader-text esmoas-new-window-note';
 			span.textContent = ' ' + notice;
 			link.appendChild( span );
 			if ( ! /noopener/.test( link.getAttribute( 'rel' ) || '' ) ) {
 				link.setAttribute( 'rel', ( ( link.getAttribute( 'rel' ) || '' ) + ' noopener' ).trim() );
 			}
-			link.setAttribute( 'data-accg-new-window', '1' );
+			link.setAttribute( 'data-esmoas-new-window', '1' );
 		} );
 	}
 
@@ -127,7 +127,7 @@
 		var observer = new window.MutationObserver( function ( mutations ) {
 			mutations.forEach( function ( mutation ) {
 				Array.prototype.forEach.call( mutation.addedNodes, function ( node ) {
-					if ( node.nodeType === 1 && ! ( node.classList && node.classList.contains( 'accg-new-window-note' ) ) ) {
+					if ( node.nodeType === 1 && ! ( node.classList && node.classList.contains( 'esmoas-new-window-note' ) ) ) {
 						pending.push( node );
 					}
 				} );

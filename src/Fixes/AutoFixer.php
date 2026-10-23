@@ -2,12 +2,14 @@
 /**
  * Applies optional one-click accessibility fixes on the front end.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Fixes;
+namespace EsmoAccessibilityScanner\Fixes;
+
+use EsmoAccessibilityScanner\Plugin;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -41,7 +43,7 @@ final class AutoFixer {
 	 * Constructor: read the enabled fixes from settings.
 	 */
 	public function __construct() {
-		$settings    = (array) get_option( 'accg_settings', array() );
+		$settings    = (array) get_option( 'esmoas_settings', array() );
 		$raw         = isset( $settings['fixes'] ) && is_array( $settings['fixes'] ) ? $settings['fixes'] : array();
 		$this->fixes = array_map( static fn ( $v ): bool => (bool) $v, $raw );
 	}
@@ -51,6 +53,13 @@ final class AutoFixer {
 	 */
 	public function register(): void {
 		if ( is_admin() ) {
+			return;
+		}
+
+		// Accessibility Guardian (1.2.0 and earlier) is this plugin under its old name. While it
+		// still runs (for example network-active, or reactivated), it applies the same fixes;
+		// applying them twice would add duplicate skip links and notices.
+		if ( defined( 'ACCG_VERSION' ) ) {
 			return;
 		}
 
@@ -110,10 +119,10 @@ final class AutoFixer {
 	 */
 	public function enqueue_assets(): void {
 		wp_enqueue_style(
-			'accg-frontend-fixes',
-			ACCG_PLUGIN_URL . 'assets/css/frontend-fixes.css',
+			'esmoas-frontend-fixes',
+			ESMOAS_PLUGIN_URL . 'assets/css/frontend-fixes.css',
 			array(),
-			ACCG_VERSION
+			ESMOAS_VERSION
 		);
 
 		if ( ! $this->needs_script() ) {
@@ -121,10 +130,10 @@ final class AutoFixer {
 		}
 
 		wp_enqueue_script(
-			'accg-frontend-fixes',
-			ACCG_PLUGIN_URL . 'assets/js/frontend-fixes.js',
+			'esmoas-frontend-fixes',
+			ESMOAS_PLUGIN_URL . 'assets/js/frontend-fixes.js',
 			array(),
-			ACCG_VERSION,
+			ESMOAS_VERSION,
 			array(
 				'in_footer' => true,
 				'strategy'  => 'defer',
@@ -132,8 +141,8 @@ final class AutoFixer {
 		);
 
 		wp_localize_script(
-			'accg-frontend-fixes',
-			'accgFixes',
+			'esmoas-frontend-fixes',
+			'esmoasFixes',
 			array(
 				'flags' => array(
 					'ensureHtmlLang'         => $this->on( 'add_html_lang' ),
@@ -144,7 +153,7 @@ final class AutoFixer {
 				),
 				'lang'  => str_replace( '_', '-', get_bloginfo( 'language' ) ),
 				'i18n'  => array(
-					'newWindow' => __( '(opens in a new window)', 'accessibility-guardian' ),
+					'newWindow' => __( '(opens in a new window)', 'esmo-accessibility-scanner' ),
 				),
 			)
 		);
@@ -162,11 +171,11 @@ final class AutoFixer {
 		}
 
 		if ( $this->on( 'add_focus_outline' ) ) {
-			$classes[] = 'accg-fix-focus-outline';
+			$classes[] = 'esmoas-fix-focus-outline';
 		}
 
 		if ( $this->on( 'underline_links' ) ) {
-			$classes[] = 'accg-fix-underline-links';
+			$classes[] = 'esmoas-fix-underline-links';
 		}
 
 		return $classes;
@@ -183,15 +192,15 @@ final class AutoFixer {
 			return;
 		}
 
-		$target = apply_filters( 'accg_skip_link_target', '#content' );
+		$target = Plugin::filter( 'esmoas_skip_link_target', '#content' );
 		if ( ! is_string( $target ) || '' === $target ) {
 			$target = '#content';
 		}
 
 		printf(
-			'<a class="accg-skip-link screen-reader-text" href="%s">%s</a>',
+			'<a class="esmoas-skip-link screen-reader-text" href="%s">%s</a>',
 			esc_url( $target ),
-			esc_html__( 'Skip to content', 'accessibility-guardian' )
+			esc_html__( 'Skip to content', 'esmo-accessibility-scanner' )
 		);
 	}
 
@@ -208,7 +217,7 @@ final class AutoFixer {
 
 		return str_replace(
 			'type="search"',
-			'type="search" aria-label="' . esc_attr__( 'Search', 'accessibility-guardian' ) . '"',
+			'type="search" aria-label="' . esc_attr__( 'Search', 'esmo-accessibility-scanner' ) . '"',
 			$form
 		);
 	}

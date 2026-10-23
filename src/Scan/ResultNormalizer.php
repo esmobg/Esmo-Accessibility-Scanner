@@ -2,14 +2,14 @@
 /**
  * Normalizes raw axe-core results into storable issue rows.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Scan;
+namespace EsmoAccessibilityScanner\Scan;
 
-use AccessibilityGuardian\Rules\RuleCatalog;
+use EsmoAccessibilityScanner\Rules\RuleCatalog;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,6 +18,28 @@ defined( 'ABSPATH' ) || exit;
  * canonical issue schema used by the storage layer.
  */
 final class ResultNormalizer {
+
+	/**
+	 * Most axe results kept per group (violations, needs review) for one page.
+	 */
+	public const MAX_RESULTS = 150;
+
+	/**
+	 * Most elements kept per rule for one page (the scanner sends at most 25).
+	 */
+	public const MAX_NODES = 25;
+
+	/**
+	 * Most issue rows stored for one page.
+	 */
+	public const MAX_ROWS = 2500;
+
+	/**
+	 * Impact values axe-core reports.
+	 *
+	 * @var array<int, string>
+	 */
+	private const IMPACTS = array( 'critical', 'serious', 'moderate', 'minor' );
 
 	/**
 	 * Rule metadata catalog.
@@ -36,24 +58,26 @@ final class ResultNormalizer {
 	/**
 	 * Normalize a single URL's scan payload into issue rows.
 	 *
+	 * The payload comes from the browser, so every field is type-checked and
+	 * the number of rows is capped (MAX_RESULTS, MAX_NODES, MAX_ROWS).
+	 *
 	 * @param array<string, mixed> $payload Decoded payload for one URL.
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function normalize( array $payload ): array {
-		$url     = isset( $payload['url'] ) ? esc_url_raw( (string) $payload['url'] ) : '';
-		$post_id = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
+		$url     = esc_url_raw( $this->text( $payload['url'] ?? '' ), array( 'http', 'https' ) );
+		$post_id = absint( $this->text( $payload['post_id'] ?? 0 ) );
 
 		$issues = array();
 
-		foreach ( $this->extract_results( $payload, 'violations' ) as $result ) {
-			foreach ( $this->build_rows( $result, $url, $post_id, false ) as $row ) {
-				$issues[] = $row;
-			}
-		}
-
-		foreach ( $this->extract_results( $payload, 'incomplete' ) as $result ) {
-			foreach ( $this->build_rows( $result, $url, $post_id, true ) as $row ) {
-				$issues[] = $row;
+		foreach ( array( 'violations' => false, 'incomplete' => true ) as $group => $is_incomplete ) {
+			foreach ( $this->extract_results( $payload, $group ) as $result ) {
+				foreach ( $this->build_rows( $result, $url, $post_id, $is_incomplete ) as $row ) {
+					if ( count( $issues ) >= self::MAX_ROWS ) {
+						return $issues;
+					}
+					$issues[] = $row;
+				}
 			}
 		}
 
@@ -70,17 +94,25 @@ final class ResultNormalizer {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function build_rows( array $result, string $url, int $post_id, bool $is_incomplete ): array {
-		$rule_id = isset( $result['id'] ) ? sanitize_key( (string) $result['id'] ) : '';
-		$impact  = isset( $result['impact'] ) ? sanitize_text_field( (string) $result['impact'] ) : '';
-		$help    = isset( $result['help'] ) ? $this->readable_text( (string) $result['help'] ) : '';
+		$rule_id = substr( sanitize_key( $this->text( $result['id'] ?? '' ) ), 0, 100 );
+		if ( '' === $rule_id ) {
+			return array();
+		}
+
+		$impact = strtolower( $this->text( $result['impact'] ?? '' ) );
+		if ( ! in_array( $impact, self::IMPACTS, true ) ) {
+			$impact = '';
+		}
+
+		$help = $this->truncate( $this->readable_text( $this->text( $result['help'] ?? '' ) ), 500 );
 
 		// Best-practice rules (headings, landmarks, ...) are advisory, not WCAG failures.
-		$best_practice = ! empty( $result['bestPractice'] );
+		$best_practice = true === ( $result['bestPractice'] ?? false );
 
 		$meta     = $this->catalog->get( $rule_id, $impact );
 		$severity = ( $is_incomplete || $best_practice ) ? 'warning' : $meta['severity'];
 
-		$nodes = isset( $result['nodes'] ) && is_array( $result['nodes'] ) ? $result['nodes'] : array();
+		$nodes = isset( $result['nodes'] ) && is_array( $result['nodes'] ) ? array_slice( $result['nodes'], 0, self::MAX_NODES ) : array();
 
 		// A result with no nodes still represents a page-level issue.
 		if ( empty( $nodes ) ) {
@@ -91,15 +123,15 @@ final class ResultNormalizer {
 
 		foreach ( $nodes as $node ) {
 			$node    = is_array( $node ) ? $node : array();
-			$snippet = isset( $node['html'] ) ? (string) $node['html'] : '';
+			$snippet = $this->text( $node['html'] ?? '' );
 			$target  = $this->target_to_path( $node['target'] ?? array() );
-			$summary = isset( $node['failureSummary'] ) ? $this->readable_text( (string) $node['failureSummary'] ) : '';
+			$summary = $this->truncate( $this->readable_text( $this->text( $node['failureSummary'] ?? '' ) ), 1000 );
 
 			$message = '' !== $help ? $help : $summary;
 			if ( $is_incomplete ) {
 				$message = sprintf(
 					/* translators: %s: rule description. */
-					__( 'Needs manual review: %s', 'accessibility-guardian' ),
+					__( 'Needs manual review: %s', 'esmo-accessibility-scanner' ),
 					$message
 				);
 			}
@@ -160,12 +192,12 @@ final class ResultNormalizer {
 			return array();
 		}
 
-		return array_values(
-			array_filter(
-				$payload[ $key ],
-				static fn ( $item ): bool => is_array( $item )
-			)
+		$results = array_filter(
+			$payload[ $key ],
+			static fn ( $item ): bool => is_array( $item )
 		);
+
+		return array_slice( array_values( $results ), 0, self::MAX_RESULTS );
 	}
 
 	/**
@@ -174,20 +206,23 @@ final class ResultNormalizer {
 	 * @param mixed $target axe target value.
 	 */
 	private function target_to_path( mixed $target ): string {
-		if ( is_array( $target ) ) {
-			$parts = array();
-			foreach ( $target as $part ) {
-				if ( is_array( $part ) ) {
-					$parts[] = implode( ' ', array_map( 'strval', $part ) );
-				} else {
-					$parts[] = (string) $part;
-				}
-			}
+		$parts = array();
 
-			return sanitize_text_field( implode( ' > ', $parts ) );
+		foreach ( is_array( $target ) ? $target : array( $target ) as $part ) {
+			// Targets inside shadow DOM are lists of selectors.
+			$parts[] = is_array( $part ) ? implode( ' ', array_map( fn ( $selector ): string => $this->text( $selector ), $part ) ) : $this->text( $part );
 		}
 
-		return sanitize_text_field( (string) $target );
+		return sanitize_text_field( implode( ' > ', array_filter( $parts, 'strlen' ) ) );
+	}
+
+	/**
+	 * A scalar payload value as a string; arrays and objects become ''.
+	 *
+	 * @param mixed $value Decoded JSON value.
+	 */
+	private function text( mixed $value ): string {
+		return is_scalar( $value ) ? (string) $value : '';
 	}
 
 	/**

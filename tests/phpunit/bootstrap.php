@@ -5,7 +5,7 @@
  * Provides minimal WordPress function stubs so the plugin's pure logic
  * classes can be unit tested without a full WordPress install.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
@@ -14,14 +14,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/' );
 }
 
-if ( ! defined( 'ACCG_VERSION' ) ) {
-	define( 'ACCG_VERSION', 'test' );
+if ( ! defined( 'ESMOAS_VERSION' ) ) {
+	define( 'ESMOAS_VERSION', 'test' );
 }
 
 // PSR-4 autoloader for the plugin source.
 spl_autoload_register(
 	static function ( string $class ): void {
-		$prefix   = 'AccessibilityGuardian\\';
+		$prefix   = 'EsmoAccessibilityScanner\\';
 		$base_dir = dirname( __DIR__, 2 ) . '/src/';
 		$len      = strlen( $prefix );
 
@@ -92,19 +92,19 @@ if ( ! function_exists( 'wp_strip_all_tags' ) ) {
 	}
 }
 
-$GLOBALS['ag_test_options']    = array();
-$GLOBALS['ag_test_post_types'] = array( 'post', 'page' );
+$GLOBALS['esmoas_test_options']    = array();
+$GLOBALS['esmoas_test_post_types'] = array( 'post', 'page' );
 
 if ( ! function_exists( 'get_option' ) ) {
 	function get_option( string $name, $default = false ) {
-		return $GLOBALS['ag_test_options'][ $name ] ?? $default;
+		return $GLOBALS['esmoas_test_options'][ $name ] ?? $default;
 	}
 }
 
 if ( ! function_exists( 'get_post_types' ) ) {
 	function get_post_types( array $args = array(), string $output = 'names' ): array {
 		$types = array();
-		foreach ( $GLOBALS['ag_test_post_types'] as $type ) {
+		foreach ( $GLOBALS['esmoas_test_post_types'] as $type ) {
 			$types[ $type ] = $type;
 		}
 		return $types;
@@ -112,8 +112,28 @@ if ( ! function_exists( 'get_post_types' ) ) {
 }
 
 if ( ! function_exists( 'apply_filters' ) ) {
-	function apply_filters( string $hook, $value ) {
-		return $value;
+	function apply_filters( string $hook, $value, ...$args ) {
+		$callback = $GLOBALS['esmoas_test_filters'][ $hook ] ?? null;
+
+		return null !== $callback ? $callback( $value, ...$args ) : $value;
+	}
+}
+
+if ( ! function_exists( 'has_filter' ) ) {
+	function has_filter( string $hook ): bool {
+		return false;
+	}
+}
+
+if ( ! function_exists( 'has_action' ) ) {
+	function has_action( string $hook ): bool {
+		return false;
+	}
+}
+
+if ( ! function_exists( 'wp_parse_url' ) ) {
+	function wp_parse_url( string $url, int $component = -1 ) {
+		return parse_url( $url, $component );
 	}
 }
 
@@ -157,7 +177,7 @@ if ( ! class_exists( 'WP_Query' ) ) {
 		 */
 		public function __construct( array $args = array() ) {
 			$limit = isset( $args['posts_per_page'] ) ? (int) $args['posts_per_page'] : 0;
-			$ids   = $GLOBALS['ag_test_post_ids'] ?? array( 11, 12, 13, 14, 15 );
+			$ids   = $GLOBALS['esmoas_test_post_ids'] ?? array( 11, 12, 13, 14, 15 );
 			$this->posts = $limit > 0 ? array_slice( $ids, 0, $limit ) : $ids;
 		}
 	}
