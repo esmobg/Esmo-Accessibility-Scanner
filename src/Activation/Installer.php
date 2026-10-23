@@ -55,6 +55,11 @@ final class Installer {
 	public const IMPORT_RETRY_TRANSIENT = 'esmoas_legacy_import_retry';
 
 	/**
+	 * Tables ("scans", "issues", "history") whose 1.2.0 rows are fully copied.
+	 */
+	public const IMPORT_TABLES_OPTION = 'esmoas_legacy_import_tables';
+
+	/**
 	 * Columns of the 1.2.0 tables, copied as they are into the new tables.
 	 *
 	 * @var array<string, array<int, string>>
@@ -188,15 +193,19 @@ final class Installer {
 	 *
 	 * Runs per site, right after the new tables are created, until it succeeds
 	 * (IMPORT_OPTION). The settings are copied once; rows are copied with plain
-	 * INSERT ... SELECT (portable to every database WordPress supports) and
-	 * custom rule ids move from "ag-" to "esmoas-". The old tables and options
-	 * are left alone: deleting the old plugin removes them, and until then it
-	 * can still be reactivated.
+	 * INSERT ... SELECT (portable to every database WordPress supports), and a
+	 * table counts as done only once its copy succeeded (IMPORT_TABLES_OPTION),
+	 * so a retry copies whatever is still missing. Custom rule ids move from
+	 * "ag-" to "esmoas-". New scans wait until the import is done (see
+	 * ScanController), so imported and new rows never share ids. The old
+	 * tables and options are left alone: deleting the old plugin removes them,
+	 * and until then it can still be reactivated.
 	 */
-	private static function import_legacy_data(): void {
+	public static function import_legacy_data(): void {
 		global $wpdb;
 
-		if ( false === get_option( self::IMPORT_OPTION, false ) ) {
+		$first_attempt = false === get_option( self::IMPORT_OPTION, false );
+		if ( $first_attempt ) {
 			$settings = get_option( self::LEGACY_PREFIX . 'settings', false );
 			if ( is_array( $settings ) ) {
 				update_option( 'esmoas_settings', $settings );
@@ -204,28 +213,40 @@ final class Installer {
 			update_option( self::IMPORT_OPTION, 'settings' );
 		}
 
+		$done     = array_values( array_filter( (array) get_option( self::IMPORT_TABLES_OPTION, array() ), 'is_string' ) );
 		$complete = true;
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		foreach ( self::LEGACY_COLUMNS as $name => $columns ) {
+			if ( in_array( $name, $done, true ) ) {
+				continue;
+			}
+
 			$old = $wpdb->prefix . self::LEGACY_PREFIX . $name;
 			$new = $wpdb->prefix . 'esmoas_' . $name;
 
 			if ( $old !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $old ) ) ) ) {
+				$done[] = $name;
 				continue;
 			}
 
-			// Never mix imported rows with data the new table already holds.
-			if ( 0 < (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $new ) ) ) {
+			// Data the new table held before the first attempt is never mixed with the old rows.
+			if ( $first_attempt && 0 < (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $new ) ) ) {
+				$done[] = $name;
 				continue;
 			}
 
+			// Rows that an earlier, interrupted attempt already copied are skipped by id.
 			$list   = implode( ', ', $columns );
-			$copied = $wpdb->query( $wpdb->prepare( "INSERT INTO %i ( {$list} ) SELECT {$list} FROM %i", $new, $old ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- $list is a fixed column list from LEGACY_COLUMNS.
+			$copied = $wpdb->query( $wpdb->prepare( "INSERT INTO %i ( {$list} ) SELECT {$list} FROM %i WHERE id NOT IN ( SELECT id FROM %i )", $new, $old, $new ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- $list is a fixed column list from LEGACY_COLUMNS.
 			if ( false === $copied ) {
 				$complete = false;
+			} else {
+				$done[] = $name;
 			}
 		}
+
+		update_option( self::IMPORT_TABLES_OPTION, $done );
 
 		// Supplemental rule ids were prefixed "ag-" before 1.3.0.
 		$renamed = $wpdb->query(

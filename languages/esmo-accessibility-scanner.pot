@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-23T12:54:32+00:00\n"
+"POT-Creation-Date: 2026-10-23T13:03:06+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: esmo-accessibility-scanner\n"
@@ -837,41 +837,45 @@ msgstr ""
 msgid "Needs manual review: %s"
 msgstr ""
 
-#: src/Scan/ScanController.php:110
+#: src/Scan/ScanController.php:103
+msgid "The scans of Accessibility Guardian are still being imported. Please try again in a few minutes."
+msgstr ""
+
+#: src/Scan/ScanController.php:124
 msgid "No scannable URLs were found."
 msgstr ""
 
-#: src/Scan/ScanController.php:119
+#: src/Scan/ScanController.php:133
 msgid "Unable to create a scan record."
 msgstr ""
 
-#: src/Scan/ScanController.php:149
+#: src/Scan/ScanController.php:163
 msgid "Invalid scan payload."
 msgstr ""
 
-#: src/Scan/ScanController.php:153
+#: src/Scan/ScanController.php:167
 msgid "Scan payload is too large."
 msgstr ""
 
-#: src/Scan/ScanController.php:159
-#: src/Scan/ScanController.php:174
-#: src/Scan/ScanController.php:259
+#: src/Scan/ScanController.php:173
+#: src/Scan/ScanController.php:188
+#: src/Scan/ScanController.php:273
 msgid "Scan is not running."
 msgstr ""
 
-#: src/Scan/ScanController.php:165
+#: src/Scan/ScanController.php:179
 msgid "Malformed scan payload."
 msgstr ""
 
-#: src/Scan/ScanController.php:169
+#: src/Scan/ScanController.php:183
 msgid "The scanned page is not on this site."
 msgstr ""
 
-#: src/Scan/ScanController.php:201
+#: src/Scan/ScanController.php:215
 msgid "Invalid scan id."
 msgstr ""
 
-#: src/Scan/ScanController.php:282
+#: src/Scan/ScanController.php:296
 msgid "You are not allowed to run scans."
 msgstr ""
 

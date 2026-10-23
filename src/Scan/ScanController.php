@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace EsmoAccessibilityScanner\Scan;
 
+use EsmoAccessibilityScanner\Activation\Installer;
 use EsmoAccessibilityScanner\Plugin;
 use EsmoAccessibilityScanner\Storage\IssueRepository;
 use EsmoAccessibilityScanner\Storage\ScanRepository;
@@ -91,6 +92,19 @@ final class ScanController {
 	 */
 	public function handle_start(): void {
 		$this->guard();
+
+		// New scans wait until the data of Accessibility Guardian is imported, so new rows never
+		// take ids that imported rows still need. Starting a scan retries a pending import at once.
+		if ( Installer::legacy_import_pending() ) {
+			Installer::import_legacy_data();
+
+			if ( Installer::legacy_import_pending() ) {
+				wp_send_json_error(
+					array( 'message' => __( 'The scans of Accessibility Guardian are still being imported. Please try again in a few minutes.', 'esmo-accessibility-scanner' ) ),
+					503
+				);
+			}
+		}
 
 		// Recover from scans abandoned mid-run (e.g. the admin closed the tab).
 		$this->scans->fail_stale();

@@ -17,7 +17,7 @@ Renamed to **Esmo Accessibility Scanner** for the WordPress.org directory, plus 
 - While Accessibility Guardian still runs (network-active on a multisite where 1.3.0 is activated per site, or reactivated later), 1.3.0 skips its own front-end fixes so they are never applied twice.
 - The six `accg_` hooks keep working through `apply_filters_deprecated()` / `do_action_deprecated()`.
 - Uninstall also removes leftover `accg_` tables and options, but only when Accessibility Guardian is no longer installed.
-- The import is recorded separately (`esmoas_legacy_import`); if a copy fails, for example because of a database timeout, it is retried at most once an hour instead of being skipped for good.
+- The import is recorded separately (`esmoas_legacy_import`, plus the tables already copied in `esmoas_legacy_import_tables`); if a copy fails, for example because of a database timeout, it is retried at most once an hour, or right away when a scan is started, and copies only the rows that are still missing. New scans wait until the import is complete, so imported and new rows never collide.
 
 ### Security
 - `esmoas_save_results` validates everything it receives: the page URL must be an http(s) URL on the site; a scan accepts at most one save per queued page and none after it has finished; at most 150 rules per group, 25 elements per rule and 2,500 rows per page; rule ids, impacts and text lengths are checked; non-scalar values are ignored.

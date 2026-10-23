@@ -46,6 +46,7 @@ function esmoas_uninstall_site( bool $remove_legacy ): void {
 	delete_option( 'esmoas_settings' );
 	delete_option( 'esmoas_db_version' );
 	delete_option( 'esmoas_legacy_import' );
+	delete_option( 'esmoas_legacy_import_tables' );
 	delete_transient( 'esmoas_legacy_import_retry' );
 
 	if ( $remove_legacy ) {

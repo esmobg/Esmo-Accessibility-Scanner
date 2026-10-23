@@ -113,7 +113,7 @@ final class Plugin {
 	 */
 	public static function filter( string $hook, $value, ...$args ) {
 		$legacy = self::LEGACY_HOOKS[ $hook ] ?? '';
-		if ( '' !== $legacy && has_filter( $legacy ) ) {
+		if ( '' !== $legacy && false !== has_filter( $legacy ) ) {
 			$value = apply_filters_deprecated( $legacy, array_merge( array( $value ), $args ), '1.3.0', $hook );
 		}
 
@@ -128,7 +128,7 @@ final class Plugin {
 	 */
 	public static function action( string $hook, ...$args ): void {
 		$legacy = self::LEGACY_HOOKS[ $hook ] ?? '';
-		if ( '' !== $legacy && has_action( $legacy ) ) {
+		if ( '' !== $legacy && false !== has_action( $legacy ) ) {
 			do_action_deprecated( $legacy, $args, '1.3.0', $hook );
 		}
 
