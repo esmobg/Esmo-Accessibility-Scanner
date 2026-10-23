@@ -14,6 +14,7 @@ Renamed to **Esmo Accessibility Scanner** for the WordPress.org directory, plus 
 ### Upgrading from Accessibility Guardian
 - Activation copies the 1.2.0 scans, issues, score history and settings (portable `INSERT … SELECT`, which also works on SQLite), renames stored custom rule ids, and deactivates Accessibility Guardian so automatic fixes are not applied twice. The old data stays until Accessibility Guardian is deleted.
 - A notice on the Plugins screen and the plugin's pages explains that the old plugin can be deleted.
+- While Accessibility Guardian still runs (network-active on a multisite where 1.3.0 is activated per site, or reactivated later), 1.3.0 skips its own front-end fixes so they are never applied twice.
 - The six `accg_` hooks keep working through `apply_filters_deprecated()` / `do_action_deprecated()`.
 - Uninstall also removes leftover `accg_` tables and options, but only when Accessibility Guardian is no longer installed.
 - The import is recorded separately (`esmoas_legacy_import`); if a copy fails, for example because of a database timeout, it is retried at most once an hour instead of being skipped for good.

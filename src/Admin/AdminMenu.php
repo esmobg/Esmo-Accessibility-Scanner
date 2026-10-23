@@ -121,7 +121,7 @@ final class AdminMenu {
 		}
 
 		$message = is_plugin_active( Installer::LEGACY_PLUGIN )
-			? __( 'Esmo Accessibility Scanner is the new name of Accessibility Guardian and has imported its scans and settings. Please deactivate and delete the old Accessibility Guardian plugin.', 'esmo-accessibility-scanner' )
+			? __( 'Esmo Accessibility Scanner is the new name of Accessibility Guardian and has imported its scans and settings. While Accessibility Guardian is active, only its automatic fixes are applied. Please deactivate and delete it.', 'esmo-accessibility-scanner' )
 			: __( 'Esmo Accessibility Scanner is the new name of Accessibility Guardian. Its scans and settings were imported and the old plugin was deactivated, so you can now delete Accessibility Guardian.', 'esmo-accessibility-scanner' );
 
 		printf( '<div class="notice notice-info"><p>%s</p></div>', esc_html( $message ) );

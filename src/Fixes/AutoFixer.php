@@ -56,6 +56,13 @@ final class AutoFixer {
 			return;
 		}
 
+		// Accessibility Guardian (1.2.0 and earlier) is this plugin under its old name. While it
+		// still runs (for example network-active, or reactivated), it applies the same fixes;
+		// applying them twice would add duplicate skip links and notices.
+		if ( defined( 'ACCG_VERSION' ) ) {
+			return;
+		}
+
 		if ( ! $this->any_enabled() ) {
 			return;
 		}

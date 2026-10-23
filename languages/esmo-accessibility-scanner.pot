@@ -46,7 +46,7 @@ msgid "Esmo Accessibility Scanner requires PHP 8.0 or later."
 msgstr ""
 
 #: src/Admin/AdminMenu.php:124
-msgid "Esmo Accessibility Scanner is the new name of Accessibility Guardian and has imported its scans and settings. Please deactivate and delete the old Accessibility Guardian plugin."
+msgid "Esmo Accessibility Scanner is the new name of Accessibility Guardian and has imported its scans and settings. While Accessibility Guardian is active, only its automatic fixes are applied. Please deactivate and delete it."
 msgstr ""
 
 #: src/Admin/AdminMenu.php:125
