@@ -13,6 +13,7 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Third-party actions are pinned to full commit SHAs; Dependabot keeps them current.
 jobs:
   lint-and-test:
     name: PHP ${{ matrix.php }}
@@ -22,9 +23,11 @@ jobs:
       matrix:
         php: [ '8.0', '8.1', '8.2', '8.3', '8.4', '8.5' ]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
-      - uses: shivammathur/setup-php@v2
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           php-version: ${{ matrix.php }}
           coverage: none
@@ -39,30 +42,47 @@ jobs:
       - name: PHPUnit
         run: vendor/bin/phpunit
 
+  build:
+    name: Build zip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: '3.12'
+
+      - name: Build release zip
+        run: python bin/build-zip.py
+
+      - name: Upload zip
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: esmo-accessibility-scanner-zip
+          path: dist/*.zip
+
+  # Runs no repository scripts: it only unpacks the zip built above, so the
+  # token that may comment on pull requests never meets code from the branch.
   plugin-check:
     name: Plugin Check
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write # lets the action post its summary on pull requests
     steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-python@v6
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
-          python-version: '3.12'
+          name: esmo-accessibility-scanner-zip
+          path: dist
 
-      - name: Build release zip
-        run: python bin/build-zip.py --dir .build
-
-      - name: Upload zip
-        uses: actions/upload-artifact@v5
-        with:
-          name: accessibility-guardian-zip
-          path: dist/*.zip
+      - name: Unpack zip
+        run: unzip -q dist/*.zip -d .build
 
       - name: Run Plugin Check
-        uses: wordpress/plugin-check-action@v1
+        uses: wordpress/plugin-check-action@10857da14b6c2246d15402b3e69f777edcf8c12e # v1.1.9
         with:
-          build-dir: .build/accessibility-guardian
-          slug: accessibility-guardian
+          build-dir: .build/esmo-accessibility-scanner
+          slug: esmo-accessibility-scanner

@@ -2,18 +2,18 @@
 /**
  * Tests for the CSV exporter.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Tests;
+namespace EsmoAccessibilityScanner\Tests;
 
-use AccessibilityGuardian\Export\CsvExporter;
+use EsmoAccessibilityScanner\Export\CsvExporter;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \AccessibilityGuardian\Export\CsvExporter
+ * @covers \EsmoAccessibilityScanner\Export\CsvExporter
  */
 final class CsvExporterTest extends TestCase {
 

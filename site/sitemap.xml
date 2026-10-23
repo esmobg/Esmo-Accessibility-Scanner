@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 	<url>
-		<loc>https://esmobg.github.io/Accessibility-Guardian/</loc>
+		<loc>https://esmobg.github.io/Esmo-Accessibility-Scanner/</loc>
 		<lastmod>__BUILD_DATE__</lastmod>
-		<xhtml:link rel="alternate" hreflang="en" href="https://esmobg.github.io/Accessibility-Guardian/"/>
-		<xhtml:link rel="alternate" hreflang="bg" href="https://esmobg.github.io/Accessibility-Guardian/bg/"/>
+		<xhtml:link rel="alternate" hreflang="en" href="https://esmobg.github.io/Esmo-Accessibility-Scanner/"/>
+		<xhtml:link rel="alternate" hreflang="bg" href="https://esmobg.github.io/Esmo-Accessibility-Scanner/bg/"/>
 	</url>
 	<url>
-		<loc>https://esmobg.github.io/Accessibility-Guardian/bg/</loc>
+		<loc>https://esmobg.github.io/Esmo-Accessibility-Scanner/bg/</loc>
 		<lastmod>__BUILD_DATE__</lastmod>
-		<xhtml:link rel="alternate" hreflang="en" href="https://esmobg.github.io/Accessibility-Guardian/"/>
-		<xhtml:link rel="alternate" hreflang="bg" href="https://esmobg.github.io/Accessibility-Guardian/bg/"/>
+		<xhtml:link rel="alternate" hreflang="en" href="https://esmobg.github.io/Esmo-Accessibility-Scanner/"/>
+		<xhtml:link rel="alternate" hreflang="bg" href="https://esmobg.github.io/Esmo-Accessibility-Scanner/bg/"/>
 	</url>
 </urlset>

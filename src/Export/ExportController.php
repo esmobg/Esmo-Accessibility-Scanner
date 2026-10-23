@@ -2,16 +2,16 @@
 /**
  * Handles report download requests via admin-post.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Export;
+namespace EsmoAccessibilityScanner\Export;
 
-use AccessibilityGuardian\Plugin;
-use AccessibilityGuardian\Storage\IssueRepository;
-use AccessibilityGuardian\Storage\ScanRepository;
+use EsmoAccessibilityScanner\Plugin;
+use EsmoAccessibilityScanner\Storage\IssueRepository;
+use EsmoAccessibilityScanner\Storage\ScanRepository;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -50,7 +50,7 @@ final class ExportController {
 	 * Register the admin-post hook.
 	 */
 	public function register(): void {
-		add_action( 'admin_post_accg_export', array( $this, 'handle' ) );
+		add_action( 'admin_post_esmoas_export', array( $this, 'handle' ) );
 	}
 
 	/**
@@ -58,10 +58,10 @@ final class ExportController {
 	 */
 	public function handle(): void {
 		if ( ! current_user_can( Plugin::capability() ) ) {
-			wp_die( esc_html__( 'You are not allowed to export reports.', 'accessibility-guardian' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You are not allowed to export reports.', 'esmo-accessibility-scanner' ), '', array( 'response' => 403 ) );
 		}
 
-		check_admin_referer( 'accg_export' );
+		check_admin_referer( 'esmoas_export' );
 
 		$scan_id = isset( $_GET['scan_id'] ) ? absint( wp_unslash( $_GET['scan_id'] ) ) : 0;
 		$format  = isset( $_GET['format'] ) ? sanitize_key( wp_unslash( $_GET['format'] ) ) : 'csv';
@@ -69,7 +69,7 @@ final class ExportController {
 		$scan = $this->scans->find( $scan_id );
 
 		if ( null === $scan ) {
-			wp_die( esc_html__( 'Scan not found.', 'accessibility-guardian' ), '', array( 'response' => 404 ) );
+			wp_die( esc_html__( 'Scan not found.', 'esmo-accessibility-scanner' ), '', array( 'response' => 404 ) );
 		}
 
 		$issues = $this->issues->for_scan( $scan_id, self::EXPORT_LIMIT, 1 );
@@ -92,6 +92,7 @@ final class ExportController {
 		$body     = $exporter->build( $issues );
 
 		nocache_headers();
+		send_nosniff_header();
 		header( 'Content-Type: text/csv; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename="' . $exporter->filename( $scan_id ) . '"' );
 		header( 'Content-Length: ' . strlen( $body ) );
@@ -112,6 +113,7 @@ final class ExportController {
 		$body     = $exporter->build( $scan, $issues );
 
 		nocache_headers();
+		send_nosniff_header();
 		header( 'Content-Type: application/json; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename="' . $exporter->filename( $scan_id ) . '"' );
 		header( 'Content-Length: ' . strlen( $body ) );

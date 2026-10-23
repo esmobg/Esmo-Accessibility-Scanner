@@ -1,24 +1,24 @@
 <?php
 /**
- * Plugin Name:       Accessibility Guardian
- * Plugin URI:        https://github.com/esmobg/Accessibility-Guardian
+ * Plugin Name:       Esmo Accessibility Scanner
+ * Plugin URI:        https://github.com/esmobg/Esmo-Accessibility-Scanner
  * Description:       Automated WCAG 2.2 AA accessibility auditor for WordPress. Scans posts, pages, custom post types, products and terms with axe-core and reports issues with remediation guidance.
- * Version:           1.2.0
+ * Version:           1.3.0
  * Requires at least: 6.4
  * Requires PHP:      8.0
  * Author:            esmobg
  * Author URI:        https://profiles.wordpress.org/esmobg/
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       accessibility-guardian
+ * Text Domain:       esmo-accessibility-scanner
  * Domain Path:       /languages
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian;
+namespace EsmoAccessibilityScanner;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -27,28 +27,27 @@ if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
 		'admin_notices',
 		static function (): void {
 			echo '<div class="notice notice-error"><p>';
-			echo esc_html__( 'Accessibility Guardian requires PHP 8.0 or later.', 'accessibility-guardian' );
+			echo esc_html__( 'Esmo Accessibility Scanner requires PHP 8.0 or later.', 'esmo-accessibility-scanner' );
 			echo '</p></div>';
 		}
 	);
 	return;
 }
 
-define( 'ACCG_VERSION', '1.2.0' );
-define( 'ACCG_PLUGIN_FILE', __FILE__ );
-define( 'ACCG_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'ACCG_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'ACCG_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+define( 'ESMOAS_VERSION', '1.3.0' );
+define( 'ESMOAS_PLUGIN_FILE', __FILE__ );
+define( 'ESMOAS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+define( 'ESMOAS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
-$accg_autoload = ACCG_PLUGIN_DIR . 'vendor/autoload.php';
-if ( is_readable( $accg_autoload ) ) {
-	require_once $accg_autoload;
+$esmoas_autoload = ESMOAS_PLUGIN_DIR . 'vendor/autoload.php';
+if ( is_readable( $esmoas_autoload ) ) {
+	require_once $esmoas_autoload;
 } else {
 	// Fallback PSR-4 autoloader so the plugin works without `composer install`.
 	spl_autoload_register(
 		static function ( string $class ): void {
-			$prefix   = 'AccessibilityGuardian\\';
-			$base_dir = ACCG_PLUGIN_DIR . 'src/';
+			$prefix   = 'EsmoAccessibilityScanner\\';
+			$base_dir = ESMOAS_PLUGIN_DIR . 'src/';
 			$len      = strlen( $prefix );
 			if ( 0 !== strncmp( $prefix, $class, $len ) ) {
 				return;

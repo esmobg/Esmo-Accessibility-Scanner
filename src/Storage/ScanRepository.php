@@ -2,37 +2,42 @@
 /**
  * Data access layer for scan records.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Storage;
+namespace EsmoAccessibilityScanner\Storage;
 
 defined( 'ABSPATH' ) || exit;
 
-// Custom accg_scans / accg_history tables; identifiers are $wpdb->prefix plus a hardcoded suffix.
+// Custom esmoas_scans / esmoas_history tables; identifiers are $wpdb->prefix plus a hardcoded suffix.
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching
 // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 // phpcs:disable PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 /**
- * Reads and writes scan rows in the accg_scans table.
+ * Reads and writes scan rows in the esmoas_scans table.
  */
 final class ScanRepository {
 
 	/**
-	 * Fully-qualified table name.
+	 * Scans table of the current site (resolved per call, so switch_to_blog() is respected).
 	 */
-	private string $table;
+	private function table(): string {
+		global $wpdb;
+
+		return $wpdb->prefix . 'esmoas_scans';
+	}
 
 	/**
-	 * Constructor.
+	 * Score history table of the current site.
 	 */
-	public function __construct() {
+	private function history_table(): string {
 		global $wpdb;
-		$this->table = $wpdb->prefix . 'accg_scans';
+
+		return $wpdb->prefix . 'esmoas_history';
 	}
 
 	/**
@@ -45,65 +50,61 @@ final class ScanRepository {
 	public function create( string $scan_type, int $total_urls ): int {
 		global $wpdb;
 
+		$now      = current_time( 'mysql' );
 		$inserted = $wpdb->insert(
-			$this->table,
+			$this->table(),
 			array(
 				'scan_type'  => $scan_type,
 				'status'     => 'running',
-				'started_at' => current_time( 'mysql' ),
+				'started_at' => $now,
+				'updated_at' => $now,
 				'total_urls' => $total_urls,
 			),
-			array( '%s', '%s', '%s', '%d' )
+			array( '%s', '%s', '%s', '%s', '%d' )
 		);
 
 		return $inserted ? (int) $wpdb->insert_id : 0;
 	}
 
 	/**
-	 * Increment the scanned-url counter for a scan.
+	 * Count one more scanned page, if the scan is running and has pages left.
+	 *
+	 * A scan never accepts more results than the pages it queued, so neither
+	 * repeated requests nor saves after the scan finished can inflate it.
 	 *
 	 * @param int $scan_id Scan id.
-	 * @param int $by      Amount to increment by.
+	 * @return bool Whether a page slot was claimed.
 	 */
-	public function increment_scanned( int $scan_id, int $by = 1 ): void {
+	public function claim_page( int $scan_id ): bool {
 		global $wpdb;
 
-		$wpdb->query(
+		$updated = $wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$this->table} SET scanned_urls = scanned_urls + %d WHERE id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$by,
+				"UPDATE {$this->table()} SET scanned_urls = scanned_urls + 1, updated_at = %s WHERE id = %d AND status = 'running' AND scanned_urls < total_urls", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				current_time( 'mysql' ),
 				$scan_id
 			)
 		);
+
+		return 1 === $updated;
 	}
 
 	/**
-	 * Finalize a scan with aggregate metrics.
+	 * Finalize a running scan with aggregate metrics and add it to the score history.
 	 *
 	 * @param int   $scan_id Scan id.
 	 * @param array{score:int,errors:int,warnings:int,passes:int} $totals Aggregate counts.
+	 * @return bool False when the scan was no longer running (for example finished by another request).
 	 */
-	public function complete( int $scan_id, array $totals ): void {
+	public function complete( int $scan_id, array $totals ): bool {
 		global $wpdb;
 
-		$wpdb->update(
-			$this->table,
-			array(
-				'status'      => 'complete',
-				'finished_at' => current_time( 'mysql' ),
-				'score'       => (int) $totals['score'],
-				'errors'      => (int) $totals['errors'],
-				'warnings'    => (int) $totals['warnings'],
-				'passes'      => (int) $totals['passes'],
-			),
-			array( 'id' => $scan_id ),
-			array( '%s', '%s', '%d', '%d', '%d', '%d' ),
-			array( '%d' )
-		);
+		if ( ! $this->finish( $scan_id, 'complete', $totals ) ) {
+			return false;
+		}
 
-		$history = $wpdb->prefix . 'accg_history';
 		$wpdb->insert(
-			$history,
+			$this->history_table(),
 			array(
 				'scan_id'    => $scan_id,
 				'score'      => (int) $totals['score'],
@@ -114,54 +115,75 @@ final class ScanRepository {
 			),
 			array( '%d', '%d', '%d', '%d', '%d', '%s' )
 		);
+
+		return true;
 	}
 
 	/**
-	 * Mark a scan as cancelled, keeping its partial totals.
+	 * Mark a running scan as cancelled, keeping its partial totals.
 	 *
 	 * Cancelled scans are not added to the score history and are never
 	 * returned by latest().
 	 *
 	 * @param int   $scan_id Scan id.
 	 * @param array{score:int,errors:int,warnings:int,passes:int} $totals Aggregate counts so far.
+	 * @return bool False when the scan was no longer running.
 	 */
-	public function cancel( int $scan_id, array $totals ): void {
+	public function cancel( int $scan_id, array $totals ): bool {
+		return $this->finish( $scan_id, 'cancelled', $totals );
+	}
+
+	/**
+	 * Move a scan from "running" to a final status in one atomic update.
+	 *
+	 * @param int    $scan_id Scan id.
+	 * @param string $status  Final status.
+	 * @param array{score:int,errors:int,warnings:int,passes:int} $totals Aggregate counts.
+	 * @return bool Whether this call finished the scan.
+	 */
+	private function finish( int $scan_id, string $status, array $totals ): bool {
 		global $wpdb;
 
-		$wpdb->update(
-			$this->table,
+		$updated = $wpdb->update(
+			$this->table(),
 			array(
-				'status'      => 'cancelled',
+				'status'      => $status,
 				'finished_at' => current_time( 'mysql' ),
 				'score'       => (int) $totals['score'],
 				'errors'      => (int) $totals['errors'],
 				'warnings'    => (int) $totals['warnings'],
 				'passes'      => (int) $totals['passes'],
 			),
-			array( 'id' => $scan_id ),
+			array(
+				'id'     => $scan_id,
+				'status' => 'running',
+			),
 			array( '%s', '%s', '%d', '%d', '%d', '%d' ),
-			array( '%d' )
+			array( '%d', '%s' )
 		);
+
+		return 1 === $updated;
 	}
 
 	/**
-	 * Mark scans stuck in "running" for too long as failed.
+	 * Mark running scans without progress for too long as failed.
 	 *
 	 * A scan only progresses while the admin keeps the Run Scan tab open, so
-	 * a closed tab would otherwise leave the row "running" forever.
+	 * a closed tab would otherwise leave the row "running" forever. Long scans
+	 * that are still saving pages are never touched.
 	 *
-	 * @param int $max_age_seconds Age after which a running scan is stale.
+	 * @param int $max_idle_seconds Inactivity after which a running scan is stale.
 	 * @return int Number of scans marked failed.
 	 */
-	public function fail_stale( int $max_age_seconds = 3600 ): int {
+	public function fail_stale( int $max_idle_seconds = 900 ): int {
 		global $wpdb;
 
-		// started_at is stored in site-local time (current_time( 'mysql' )), so compare in the same zone.
-		$cutoff = wp_date( 'Y-m-d H:i:s', time() - $max_age_seconds );
+		// Times are stored in site-local time (current_time( 'mysql' )), so compare in the same zone.
+		$cutoff = wp_date( 'Y-m-d H:i:s', time() - $max_idle_seconds );
 
 		$updated = $wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$this->table} SET status = 'failed', finished_at = %s WHERE status = 'running' AND started_at < %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"UPDATE {$this->table()} SET status = 'failed', finished_at = %s WHERE status = 'running' AND COALESCE( updated_at, started_at ) < %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				current_time( 'mysql' ),
 				$cutoff
 			)
@@ -180,7 +202,7 @@ final class ScanRepository {
 		global $wpdb;
 
 		$row = $wpdb->get_row(
-			$wpdb->prepare( "SELECT * FROM {$this->table} WHERE id = %d", $scan_id ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->prepare( "SELECT * FROM {$this->table()} WHERE id = %d", $scan_id ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			ARRAY_A
 		);
 
@@ -196,7 +218,7 @@ final class ScanRepository {
 		global $wpdb;
 
 		$row = $wpdb->get_row(
-			"SELECT * FROM {$this->table} WHERE status = 'complete' ORDER BY id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			"SELECT * FROM {$this->table()} WHERE status = 'complete' ORDER BY id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			ARRAY_A
 		);
 
@@ -213,7 +235,7 @@ final class ScanRepository {
 		global $wpdb;
 
 		$rows = $wpdb->get_results(
-			$wpdb->prepare( "SELECT * FROM {$this->table} ORDER BY id DESC LIMIT %d", $limit ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->prepare( "SELECT * FROM {$this->table()} ORDER BY id DESC LIMIT %d", $limit ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			ARRAY_A
 		);
 
@@ -229,9 +251,8 @@ final class ScanRepository {
 	public function history( int $limit = 30 ): array {
 		global $wpdb;
 
-		$history = $wpdb->prefix . 'accg_history';
-		$rows    = $wpdb->get_results(
-			$wpdb->prepare( "SELECT * FROM {$history} ORDER BY id DESC LIMIT %d", $limit ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = $wpdb->get_results(
+			$wpdb->prepare( "SELECT * FROM {$this->history_table()} ORDER BY id DESC LIMIT %d", $limit ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			ARRAY_A
 		);
 

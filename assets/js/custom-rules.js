@@ -1,5 +1,5 @@
 /**
- * Accessibility Guardian - supplemental checks not covered by axe-core.
+ * Esmo Accessibility Scanner - supplemental checks not covered by axe-core.
  *
  * Each rule returns the same shape axe-core uses for violations so the
  * server-side normalizer can treat them uniformly.
@@ -44,7 +44,8 @@
 
 	function nodeFor( el, summary ) {
 		return {
-			html: el.outerHTML ? el.outerHTML.slice( 0, 400 ) : '',
+			// Cut by code points so an emoji is never split (see clip() in scanner.js).
+			html: el.outerHTML ? Array.from( el.outerHTML ).slice( 0, 400 ).join( '' ) : '',
 			target: [ selectorFor( el ) ],
 			failureSummary: summary || ''
 		};
@@ -54,7 +55,7 @@
 		return { id: id, impact: impact, help: help, nodes: nodes };
 	}
 
-	var i18n = window.accgCustomRulesI18n || {};
+	var i18n = window.esmoasCustomRulesI18n || {};
 
 	function checkGenericLinks( doc ) {
 		var nodes = [];
@@ -70,7 +71,7 @@
 			}
 		} );
 		return nodes.length
-			? ruleResult( 'ag-generic-link-text', 'moderate', i18n.genericLinkHelp || 'Links must use descriptive text', nodes )
+			? ruleResult( 'esmoas-generic-link-text', 'moderate', i18n.genericLinkHelp || 'Links must use descriptive text', nodes )
 			: null;
 	}
 
@@ -91,7 +92,7 @@
 			}
 		} );
 		return nodes.length
-			? ruleResult( 'ag-placeholder-as-label', 'moderate', i18n.placeholderHelp || 'Placeholder is not a substitute for a label', nodes )
+			? ruleResult( 'esmoas-placeholder-as-label', 'moderate', i18n.placeholderHelp || 'Placeholder is not a substitute for a label', nodes )
 			: null;
 	}
 
@@ -109,7 +110,7 @@
 			}
 		} );
 		return nodes.length
-			? ruleResult( 'ag-new-window-warning', 'minor', i18n.newWindowHelp || 'Warn users when links open new windows', nodes )
+			? ruleResult( 'esmoas-new-window-warning', 'minor', i18n.newWindowHelp || 'Warn users when links open new windows', nodes )
 			: null;
 	}
 
@@ -126,7 +127,7 @@
 			}
 		} );
 		return nodes.length
-			? ruleResult( 'ag-pdf-link', 'minor', i18n.pdfHelp || 'Verify accessibility of linked PDF documents', nodes )
+			? ruleResult( 'esmoas-pdf-link', 'minor', i18n.pdfHelp || 'Verify accessibility of linked PDF documents', nodes )
 			: null;
 	}
 
@@ -137,14 +138,7 @@
 		return String( value ).replace( /([^a-zA-Z0-9_-])/g, '\\$1' );
 	}
 
-	var SEVERITY_BY_RULE = {
-		'ag-generic-link-text': 'minor',
-		'ag-placeholder-as-label': 'minor',
-		'ag-new-window-warning': 'warning',
-		'ag-pdf-link': 'warning'
-	};
-
-	window.accgCustomRules = {
+	window.esmoasCustomRules = {
 		run: function ( doc ) {
 			var checks = [ checkGenericLinks, checkPlaceholderLabels, checkNewWindow, checkPdfLinks ];
 			var violations = [];
@@ -155,9 +149,6 @@
 				}
 			} );
 			return { violations: violations };
-		},
-		severityFor: function ( rule ) {
-			return SEVERITY_BY_RULE[ rule.id ] || null;
 		}
 	};
 } )();

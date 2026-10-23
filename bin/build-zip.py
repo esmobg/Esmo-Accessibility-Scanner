@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Build the WordPress.org release zip for Accessibility Guardian.
+"""Build the WordPress.org release zip for Esmo Accessibility Scanner.
 
 Usage:
-    python bin/build-zip.py              # -> dist/accessibility-guardian-<version>.zip
+    python bin/build-zip.py              # -> dist/esmo-accessibility-scanner-<version>.zip
     python bin/build-zip.py --dir out/   # also unpack the plugin folder into out/
 
-Files come from git (tracked plus untracked-but-not-ignored) and are filtered
-by .distignore. Every pattern is matched against each path segment and the
-full relative path. The zip root folder is always `accessibility-guardian/`,
+Only files tracked by git are packed (new files must be `git add`ed first), so
+stray local files such as .env or scratch scripts can never ship. Symlinks are
+rejected. The list is filtered by .distignore. Every pattern is matched against each path segment and the
+full relative path. The zip root folder is always `esmo-accessibility-scanner/`,
 whatever the repository folder is called.
 """
 
@@ -22,7 +23,7 @@ import sys
 import zipfile
 from pathlib import Path
 
-SLUG = "accessibility-guardian"
+SLUG = "esmo-accessibility-scanner"
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -48,12 +49,11 @@ def is_ignored(path: str, patterns: list[str]) -> bool:
 
 
 def source_files() -> list[str]:
-    output = subprocess.check_output(
-        ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
-        cwd=ROOT,
-        text=True,
-    )
+    output = subprocess.check_output(["git", "ls-files", "--cached"], cwd=ROOT, text=True)
     files = sorted({line.strip() for line in output.splitlines() if line.strip()})
+    links = [f for f in files if (ROOT / f).is_symlink()]
+    if links:
+        sys.exit(f"Refusing to pack symlinks: {', '.join(links)}")
     return [f for f in files if (ROOT / f).is_file()]
 
 

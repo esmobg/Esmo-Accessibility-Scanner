@@ -1,21 +1,23 @@
 <p align="center">
-  <img src="wp-org-assets/banner-1544x500.png" alt="Accessibility Guardian: WCAG 2.2 AA audits with axe-core, right inside WordPress" width="772">
+  <img src="wp-org-assets/banner-1544x500.png" alt="Esmo Accessibility Scanner: WCAG 2.2 AA audits with axe-core, right inside WordPress" width="772">
 </p>
 
-# Accessibility Guardian for WordPress
+# Esmo Accessibility Scanner for WordPress
 
-[![CI](https://github.com/esmobg/Accessibility-Guardian/actions/workflows/ci.yml/badge.svg)](https://github.com/esmobg/Accessibility-Guardian/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
+[![CI](https://github.com/esmobg/Esmo-Accessibility-Scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/esmobg/Esmo-Accessibility-Scanner/actions/workflows/ci.yml)
+![Version](https://img.shields.io/badge/version-1.3.0-blue)
 ![WordPress](https://img.shields.io/badge/WordPress-6.4%E2%80%937.1-21759b)
 ![PHP](https://img.shields.io/badge/PHP-8.0%E2%80%938.5-777bb4)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-green)
-[![Website](https://img.shields.io/badge/website-esmobg.github.io-16713a)](https://esmobg.github.io/Accessibility-Guardian/)
+[![Website](https://img.shields.io/badge/website-esmobg.github.io-2356eb)](https://esmobg.github.io/Esmo-Accessibility-Scanner/)
 
-**Website:** https://esmobg.github.io/Accessibility-Guardian/
+**Website:** https://esmobg.github.io/Esmo-Accessibility-Scanner/
 
-Accessibility Guardian is a WordPress plugin that checks your site against **WCAG 2.2 Level A and AA** from the admin dashboard. It runs the [axe-core](https://github.com/dequelabs/axe-core) engine in the administrator's browser against the fully rendered front end of each page. You get a score, a prioritized list of issues with the exact element and a recommended fix, a progress chart, exports and optional one-click fixes.
+Esmo Accessibility Scanner is a WordPress plugin that checks your site against **WCAG 2.2 Level A and AA** from the admin dashboard. It runs the [axe-core](https://github.com/dequelabs/axe-core) engine in the administrator's browser against the fully rendered front end of each page. You get a score, a prioritized list of issues with the exact element and a recommended fix, a progress chart, exports and optional one-click fixes.
 
 There is no external service, no account and nothing to install on the server: no Node.js, no headless browser, no API key. If your site runs WordPress, it can be scanned.
+
+> **Formerly Accessibility Guardian.** The plugin was renamed in 1.3.0 for the WordPress.org directory. Activating Esmo Accessibility Scanner imports the data of Accessibility Guardian 1.2 and deactivates it; see [Upgrading from Accessibility Guardian](#upgrading-from-accessibility-guardian).
 
 > **Automated testing is not a compliance certificate.** Tools like this one find a large share of common problems quickly, but some WCAG requirements can only be checked by a person. Use the report to fix what is found, then test key pages with a keyboard and a screen reader.
 
@@ -27,6 +29,7 @@ There is no external service, no account and nothing to install on the server: n
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Upgrading from Accessibility Guardian](#upgrading-from-accessibility-guardian)
 - [Usage](#usage)
 - [Scoring](#scoring)
 - [Automatic fixes](#automatic-fixes)
@@ -70,7 +73,7 @@ All screenshots are taken from a real WordPress 7.1 site (a demo bakery site wit
 - **Optional automatic fixes** applied on the front end through WordPress hooks (see [Automatic fixes](#automatic-fixes)).
 - **CSV and JSON export** of any scan.
 - **Multisite:** per-site or network activation, automatic setup for new sites, clean-up when a site is deleted.
-- **Translation-ready** (`accessibility-guardian` text domain).
+- **Translation-ready** (`esmo-accessibility-scanner` text domain).
 - **Accessible itself:** the plugin's admin screens pass axe-core WCAG 2.2 AA and best-practice checks.
 
 ## Requirements
@@ -88,29 +91,39 @@ The scanner loads each page in a hidden frame on your own domain. That works unl
 
 **From WordPress.org** (once the listing is live)
 
-1. Go to **Plugins > Add New Plugin** and search for "Accessibility Guardian".
+1. Go to **Plugins > Add New Plugin** and search for "Esmo Accessibility Scanner".
 2. Click **Install Now**, then **Activate**.
 
 **From a release zip**
 
-1. Download `accessibility-guardian-<version>.zip` from the [latest GitHub release](https://github.com/esmobg/Accessibility-Guardian/releases/latest).
+1. Download `esmo-accessibility-scanner-<version>.zip` from the [latest GitHub release](https://github.com/esmobg/Esmo-Accessibility-Scanner/releases/latest).
 2. Go to **Plugins > Add New Plugin > Upload Plugin**, choose the zip and click **Install Now**, then **Activate**.
 
-> Do not use GitHub's green **Code > Download ZIP** button for installation. That archive is the development repository: it unpacks to a folder called `Accessibility-Guardian-main` and includes tests and tooling. Use the release zip instead.
+> Do not use GitHub's green **Code > Download ZIP** button for installation. That archive is the development repository: it unpacks to a folder called `Esmo-Accessibility-Scanner-main` and includes tests and tooling. Use the release zip instead.
 
 **From git** (for development)
 
 ```bash
 cd wp-content/plugins
-git clone https://github.com/esmobg/Accessibility-Guardian.git accessibility-guardian
+git clone https://github.com/esmobg/Esmo-Accessibility-Scanner.git esmo-accessibility-scanner
 ```
 
 The plugin includes its own autoloader, so `composer install` is only needed to run the tests.
 
+## Upgrading from Accessibility Guardian
+
+Until version 1.2.0 this plugin was called **Accessibility Guardian** (folder `accessibility-guardian`, prefix `accg_`). WordPress.org asked for a more distinctive name, so 1.3.0 is **Esmo Accessibility Scanner** with the slug `esmo-accessibility-scanner`. For WordPress that is a different plugin, so it does not replace the old one automatically.
+
+1. Install Esmo Accessibility Scanner and activate it. It copies the scans, issues, score history and settings of Accessibility Guardian into its own tables, and deactivates Accessibility Guardian so that the automatic fixes are not applied twice. On multisite, network activation does this on every site.
+2. Check the dashboard: your previous scans and score history are there.
+3. Delete Accessibility Guardian on the Plugins screen. Its uninstaller removes its old copy of the data; your imported data is not touched.
+
+The import runs once per site and never overwrites data already stored by Esmo Accessibility Scanner. Code that uses the old `accg_` hooks keeps working (see [Developer hooks](#developer-hooks)).
+
 ## Usage
 
-1. Open **Accessibility Guardian > Run Scan** and click **Start full site scan**. The progress bar and log show each page as it is checked. Keep the tab open until the scan finishes, or click **Cancel** to stop after the current page (a cancelled scan keeps its partial results but does not replace your latest complete report).
-2. To check one page, open it on the front end while logged in and click **Scan accessibility** in the toolbar. You can also go to `wp-admin/admin.php?page=accessibility-guardian-scan&post_id=123`.
+1. Open **Accessibility Scanner > Run Scan** and click **Start full site scan**. The progress bar and log show each page as it is checked. Keep the tab open until the scan finishes, or click **Cancel** to stop after the current page (a cancelled scan keeps its partial results but does not replace your latest complete report).
+2. To check one page, open it on the front end while logged in and click **Scan accessibility** in the toolbar. You can also go to `wp-admin/admin.php?page=esmo-accessibility-scanner-scan&post_id=123`.
 3. Review the findings under **Issues**. Use the severity tabs to focus on Critical and Major problems first. Each card shows the page, the element, its HTML and a recommended fix.
 4. Check the **Dashboard** for the score, the breakdown by severity and WCAG category, the progress chart and the most common problems.
 5. Export any scan with the **CSV** or **JSON** buttons on the dashboard.
@@ -145,7 +158,7 @@ All fixes are off by default. They use WordPress hooks and small front-end asset
 | Fix | What it does | WCAG | Notes |
 | --- | --- | --- | --- |
 | Add missing language attribute | Sets `lang` on `<html>` when the theme leaves it out | 3.1.1 | Uses the site language |
-| Add a skip-to-content link | Adds a keyboard skip link at the top of every page | 2.4.1 | Classic themes only; block themes already get one from WordPress. Target filterable with `accg_skip_link_target` |
+| Add a skip-to-content link | Adds a keyboard skip link at the top of every page | 2.4.1 | Classic themes only; block themes already get one from WordPress. Target filterable with `esmoas_skip_link_target` |
 | Add a visible focus outline | Shows a clear outline on focused links and controls | 2.4.7 | Uses `:focus-visible`, so mouse clicks are unaffected |
 | Underline links in content | Underlines links inside post content | 1.4.1 | Buttons and navigation menus are left alone |
 | Warn about links opening new windows | Adds a hidden "(opens in a new window)" to `target="_blank"` links | 3.2.5 | Also adds `rel="noopener"` |
@@ -160,34 +173,34 @@ Fixes that change elements are re-applied to content added after the page loads,
 
 ```mermaid
 flowchart LR
-  admin[Admin clicks Start scan] --> start["AJAX accg_start_scan"]
+  admin[Admin clicks Start scan] --> start["AJAX esmoas_start_scan"]
   start --> urls[UrlProvider builds the URL queue]
   urls --> queue[scan_id + queue returned to the browser]
   queue --> loop[scanner.js takes the next URL]
   loop --> iframe[Load the page in a hidden same-origin frame]
   iframe --> run["Inject axe-core and run it, excluding the toolbar"]
   run --> custom[Run the supplemental checks]
-  custom --> save["AJAX accg_save_results"]
+  custom --> save["AJAX esmoas_save_results"]
   save --> norm[ResultNormalizer maps results to issues]
   norm --> store[IssueRepository stores the issues]
   store --> loop
-  loop --> done["AJAX accg_finish_scan"]
+  loop --> done["AJAX esmoas_finish_scan"]
   done --> score[ScoreCalculator stores the score and history]
   score --> dash[Dashboard and Issues pages]
 ```
 
-1. **Start.** `accg_start_scan` builds the queue of URLs (home page, published content in ID order, optional term archives, capped at 1,000) and creates a scan record.
+1. **Start.** `esmoas_start_scan` builds the queue of URLs (home page, published content in ID order, optional term archives, capped at 1,000) and creates a scan record.
 2. **Scan.** For each URL, `assets/js/scanner.js` loads the page in a sandboxed, same-origin frame, injects the bundled axe-core and runs it with the configured WCAG tags. `assets/js/custom-rules.js` adds the supplemental checks. The WordPress toolbar is excluded.
-3. **Save.** The results are sent to `accg_save_results`, normalized into issue rows (severity, WCAG reference, category, fix, documentation link) and stored.
-4. **Finish.** `accg_finish_scan` calculates the per-page and site score, stores the totals and adds a point to the history, or marks the scan as cancelled.
+3. **Save.** The results are sent to `esmoas_save_results`, checked and normalized into issue rows (severity, WCAG reference, category, fix, documentation link) and stored. The server treats the browser's data as untrusted: the page must be on the site, each queued page can be saved once, and at most 150 rules per group, 25 elements per rule and 2,500 rows per page are kept.
+4. **Finish.** `esmoas_finish_scan` calculates the per-page and site score, stores the totals and adds a point to the history, or marks the scan as cancelled.
 
-All AJAX requests require the `accg_scan` nonce and the capability returned by `accg_required_capability` (default `manage_options`).
+All AJAX requests require the `esmoas_scan` nonce and the capability returned by `esmoas_required_capability` (default `manage_options`). Settings use their own capability, `esmoas_settings_capability` (also `manage_options`).
 
 ## Architecture
 
 ```text
-accessibility-guardian/
-├── accessibility-guardian.php     Plugin header, constants, autoloader, hooks
+esmo-accessibility-scanner/
+├── esmo-accessibility-scanner.php     Plugin header, constants, autoloader, hooks
 ├── uninstall.php                  Removes tables and options (every site on multisite)
 ├── readme.txt                     WordPress.org readme
 ├── src/
@@ -211,7 +224,7 @@ accessibility-guardian/
 │   ├── js/frontend-fixes.js       DOM-based automatic fixes
 │   └── css/admin.css, frontend-fixes.css
 ├── templates/                     Dashboard, Run Scan, Issues and Settings views
-└── languages/                     accessibility-guardian.pot
+└── languages/                     esmo-accessibility-scanner.pot
 ```
 
 Repository-only folders (not in the release zip): `tests/` (PHPUnit), `bin/` (build and screenshot tools), `docs/` (QA notes and the WordPress.org submission guide), `site/` (the project website), `wp-org-assets/` (WordPress.org icons, banners, screenshots and Live Preview blueprint) and `.github/` (CI and releases).
@@ -220,20 +233,22 @@ Repository-only folders (not in the release zip): `tests/` (PHPUnit), `bin/` (bu
 
 | Name | Type | Contents |
 | --- | --- | --- |
-| `{prefix}accg_scans` | table | One row per scan: type, status (`running`, `complete`, `cancelled`, `failed`), URL counts, score, totals |
-| `{prefix}accg_issues` | table | One row per finding |
-| `{prefix}accg_history` | table | Score history for the progress chart (complete scans only) |
-| `accg_settings` | option | Post types, term archives, WCAG level, best-practice checks, enabled fixes |
-| `accg_db_version` | option | Installed schema version |
+| `{prefix}esmoas_scans` | table | One row per scan: type, status (`running`, `complete`, `cancelled`, `failed`), URL counts, score, totals |
+| `{prefix}esmoas_issues` | table | One row per finding |
+| `{prefix}esmoas_history` | table | Score history for the progress chart (complete scans only) |
+| `esmoas_settings` | option | Post types, term archives, WCAG level, best-practice checks, enabled fixes |
+| `esmoas_db_version` | option | Installed schema version |
+
+Deleting the plugin removes all of it, on every site of a network, plus anything left over from Accessibility Guardian (`accg_` tables and options).
 
 ### Endpoints
 
 | Endpoint | Purpose |
 | --- | --- |
-| `wp_ajax_accg_start_scan` | Build the URL queue and create a scan |
-| `wp_ajax_accg_save_results` | Store the results for one URL |
-| `wp_ajax_accg_finish_scan` | Calculate the score and close the scan (`cancelled=1` for a cancelled scan) |
-| `admin_post_accg_export` | Download a scan as CSV or JSON (nonce `accg_export`) |
+| `wp_ajax_esmoas_start_scan` | Build the URL queue and create a scan |
+| `wp_ajax_esmoas_save_results` | Store the results for one URL |
+| `wp_ajax_esmoas_finish_scan` | Calculate the score and close the scan (`cancelled=1` for a cancelled scan) |
+| `admin_post_esmoas_export` | Download a scan as CSV or JSON (nonce `esmoas_export`) |
 
 ## Developer hooks
 
@@ -241,40 +256,43 @@ Repository-only folders (not in the release zip): `tests/` (PHPUnit), `bin/` (bu
 
 | Filter | Default | Description |
 | --- | --- | --- |
-| `accg_scan_url_limit` | `1000` | Maximum number of URLs in a full-site scan (clamped to 1–10,000) |
-| `accg_scan_urls` | built queue | The full-site URL queue before it is capped. Each entry is `[ 'url' => string, 'post_id' => int, 'label' => string ]`. Second argument: the limit |
-| `accg_axe_options` | `[ 'runOnly' => [ 'type' => 'tag', 'values' => [...] ] ]` | Options passed to `axe.run()` for every page |
-| `accg_required_capability` | `manage_options` | Capability needed to view reports, run scans, export and change settings |
-| `accg_skip_link_target` | `#content` | `href` of the skip link added by the skip-link fix |
+| `esmoas_scan_url_limit` | `1000` | Maximum number of URLs in a full-site scan (clamped to 1–10,000) |
+| `esmoas_scan_urls` | built queue | The full-site URL queue before it is capped. Each entry is `[ 'url' => string, 'post_id' => int, 'label' => string ]`. Second argument: the limit |
+| `esmoas_axe_options` | `[ 'runOnly' => [ 'type' => 'tag', 'values' => [...] ] ]` | Options passed to `axe.run()` for every page |
+| `esmoas_required_capability` | `manage_options` | Capability needed to view reports, run scans and export |
+| `esmoas_settings_capability` | `manage_options` | Capability needed to change the settings, including the site-wide automatic fixes (since 1.3.0) |
+| `esmoas_skip_link_target` | `#content` | `href` of the skip link added by the skip-link fix |
 
 ### Actions
 
 | Action | Arguments | Description |
 | --- | --- | --- |
-| `accg_scan_completed` | `int $scan_id`, `array $totals` (`score`, `errors`, `warnings`, `passes`) | Fires after a scan finishes and its score is stored (not for cancelled scans) |
+| `esmoas_scan_completed` | `int $scan_id`, `array $totals` (`score`, `errors`, `warnings`, `passes`) | Fires after a scan finishes and its score is stored (not for cancelled scans) |
+
+Up to 1.2.0 these hooks were called `accg_…` (for example `accg_scan_urls`). The old names still work: their callbacks run first, and WordPress shows a deprecation notice when `WP_DEBUG` is on.
 
 ### Examples
 
 ```php
 // Also scan a landing page that is not a post, and drop a private section.
-add_filter( 'accg_scan_urls', function ( array $urls ) {
+add_filter( 'esmoas_scan_urls', function ( array $urls ) {
 	$urls[] = array( 'url' => home_url( '/campaign/' ), 'post_id' => 0, 'label' => 'Campaign landing page' );
 
 	return array_values( array_filter( $urls, fn ( $entry ) => ! str_contains( $entry['url'], '/members/' ) ) );
 } );
 
 // Ignore a third-party widget and turn off one rule.
-add_filter( 'accg_axe_options', function ( array $options ) {
+add_filter( 'esmoas_axe_options', function ( array $options ) {
 	$options['rules'] = array( 'region' => array( 'enabled' => false ) );
 
 	return $options;
 } );
 
-// Let editors run scans and see reports.
-add_filter( 'accg_required_capability', fn () => 'edit_others_posts' );
+// Let editors run scans and see reports. Settings stay with administrators.
+add_filter( 'esmoas_required_capability', fn () => 'edit_others_posts' );
 
 // Notify the team when a scan finishes with a low score.
-add_action( 'accg_scan_completed', function ( int $scan_id, array $totals ) {
+add_action( 'esmoas_scan_completed', function ( int $scan_id, array $totals ) {
 	if ( $totals['score'] < 80 ) {
 		wp_mail( get_option( 'admin_email' ), 'Accessibility score dropped', sprintf( 'Scan #%d scored %d/100.', $scan_id, $totals['score'] ) );
 	}
@@ -286,7 +304,7 @@ add_action( 'accg_scan_completed', function ( int $scan_id, array $totals ) {
 - Scans run on your own site and in your own browser. Page content and results are never sent to the plugin author or any third party.
 - Results are stored in your WordPress database and deleted when the plugin is deleted.
 - Documentation links point to dequeuniversity.com and w3.org and are only opened when clicked.
-- Pages are scanned as the logged-in administrator, so analytics on the site may record those page views.
+- Pages are scanned as the logged-in administrator, so scripts on those pages run as they do when you open them yourself, and analytics may record the page views.
 
 ## Limitations
 
@@ -330,8 +348,8 @@ The PHPUnit suite in `tests/phpunit/` covers the pure-logic classes (`ScoreCalcu
 ```bash
 python bin/build-zip.py --dir .build
 npx @wp-playground/cli@latest server --port=9400 --login \
-  --mount-dir .build/accessibility-guardian /wordpress/wp-content/plugins/accessibility-guardian \
-  --mount-dir bin/screenshots /wordpress/accg-tools \
+  --mount-dir .build/esmo-accessibility-scanner /wordpress/wp-content/plugins/esmo-accessibility-scanner \
+  --mount-dir bin/screenshots /wordpress/esmoas-tools \
   --blueprint=bin/screenshots/blueprint.json
 ```
 
@@ -342,7 +360,7 @@ Open http://127.0.0.1:9400. The blueprint activates the plugin and creates a sma
 Before every release, run [Plugin Check](https://wordpress.org/plugins/plugin-check/) on the built plugin (all categories, errors and warnings). CI does this automatically on every push. Locally, install the Plugin Check plugin in Playground and use **Tools > Plugin Check**, or run:
 
 ```bash
-wp plugin check accessibility-guardian
+wp plugin check esmo-accessibility-scanner
 ```
 
 ### Regenerating screenshots and WordPress.org assets
@@ -356,14 +374,14 @@ node bin/screenshots/render-brand.js     # icon-128/256 and banner-772/1544 from
 
 ### Website
 
-The project website (https://esmobg.github.io/Accessibility-Guardian/) lives in `site/`: plain HTML, CSS and a little JavaScript, no build tools. `python bin/build-site.py` assembles it into `.site-build/`, copying the icon, banner and screenshots from `wp-org-assets/` and linking the download buttons to the latest published GitHub release that has the zip attached (so a version bump on `main` never produces broken links). The [Website workflow](.github/workflows/pages.yml) deploys it to GitHub Pages whenever `site/` or `wp-org-assets/` changes and after every successful release.
+The project website (https://esmobg.github.io/Esmo-Accessibility-Scanner/) lives in `site/`: plain HTML, CSS and a little JavaScript, no build tools. `python bin/build-site.py` assembles it into `.site-build/`, copying the icon, banner and screenshots from `wp-org-assets/` and linking the download buttons to the latest published GitHub release that has the zip attached (so a version bump on `main` never produces broken links). The [Website workflow](.github/workflows/pages.yml) deploys it to GitHub Pages whenever `site/` or `wp-org-assets/` changes and after every successful release.
 
 To preview it locally:
 
 ```bash
-python bin/build-site.py --out .site-build/Accessibility-Guardian
+python bin/build-site.py --out .site-build/Esmo-Accessibility-Scanner
 python -m http.server 8765 --directory .site-build
-# open http://127.0.0.1:8765/Accessibility-Guardian/
+# open http://127.0.0.1:8765/Esmo-Accessibility-Scanner/
 ```
 
 ### Translations
@@ -371,14 +389,14 @@ python -m http.server 8765 --directory .site-build
 Regenerate the template after changing strings:
 
 ```bash
-wp i18n make-pot . languages/accessibility-guardian.pot --exclude=tests,bin,docs,dist,.build,vendor,node_modules
+wp i18n make-pot . languages/esmo-accessibility-scanner.pot --exclude=tests,bin,docs,dist,.build,vendor,node_modules
 ```
 
 ## Releasing
 
-1. Update the version in `accessibility-guardian.php` (header and `ACCG_VERSION`), `Stable tag` in `readme.txt`, the changelog in `readme.txt` and [`CHANGELOG.md`](CHANGELOG.md).
-2. Build the zip: `python bin/build-zip.py`. It reads the version from the plugin header, refuses to build if `Stable tag` does not match, excludes everything listed in [`.distignore`](.distignore) and always uses `accessibility-guardian/` as the root folder.
-3. Push a tag such as `v1.2.0`. The [release workflow](.github/workflows/release.yml) builds the same zip and attaches it to a GitHub release.
+1. Update the version in `esmo-accessibility-scanner.php` (header and `ESMOAS_VERSION`), `Stable tag` in `readme.txt`, the changelog in `readme.txt` and [`CHANGELOG.md`](CHANGELOG.md).
+2. Build the zip: `python bin/build-zip.py`. It reads the version from the plugin header, refuses to build if `Stable tag` does not match, excludes everything listed in [`.distignore`](.distignore) and always uses `esmo-accessibility-scanner/` as the root folder.
+3. Push a tag such as `v1.3.0`. The [release workflow](.github/workflows/release.yml) builds the same zip and attaches it to a GitHub release with a `.sha256` checksum and a signed build provenance attestation (check it with `gh attestation verify esmo-accessibility-scanner-1.3.0.zip --repo esmobg/Esmo-Accessibility-Scanner`).
 4. Publish to WordPress.org with SVN as described in [`docs/qa/wordpress-org-submit.md`](docs/qa/wordpress-org-submit.md).
 
 ## Contributing
@@ -386,11 +404,11 @@ wp i18n make-pot . languages/accessibility-guardian.pot --exclude=tests,bin,docs
 Issues and pull requests are welcome. Please:
 
 - follow the [WordPress Coding Standards](https://developer.wordpress.org/coding-standards/wordpress-coding-standards/) (tabs, `array()`, Yoda conditions);
-- prefix everything global with `accg_` / `ACCG_` / `AccessibilityGuardian\`;
+- prefix everything global with `esmoas_` / `ESMOAS_` / `EsmoAccessibilityScanner\`;
 - sanitize input, escape output and check nonces and capabilities on every request;
 - add or update tests for logic changes and make sure CI passes.
 
-To report a security problem, please do not open a public issue; report it privately through the repository's **Security** tab instead.
+To report a security problem, please do not open a public issue; see [`SECURITY.md`](SECURITY.md).
 
 ## Changelog
 
@@ -398,6 +416,6 @@ See [`CHANGELOG.md`](CHANGELOG.md).
 
 ## License
 
-Accessibility Guardian is licensed under the [GPL-2.0-or-later](LICENSE.txt).
+Esmo Accessibility Scanner is licensed under the [GPL-2.0-or-later](LICENSE.txt).
 
 It bundles [axe-core](https://github.com/dequelabs/axe-core) 4.10.2 by Deque Systems, licensed under the [Mozilla Public License 2.0](https://www.mozilla.org/MPL/2.0/), which is GPL-compatible. The unminified source is included as `assets/js/axe.js`.

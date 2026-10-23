@@ -4,16 +4,16 @@
 		"php": "8.3",
 		"wp": "latest"
 	},
-	"landingPage": "/wp-admin/admin.php?page=accessibility-guardian",
+	"landingPage": "/wp-admin/admin.php?page=esmo-accessibility-scanner",
 	"login": true,
 	"steps": [
 		{
 			"step": "activatePlugin",
-			"pluginPath": "accessibility-guardian/accessibility-guardian.php"
+			"pluginPath": "esmo-accessibility-scanner/esmo-accessibility-scanner.php"
 		},
 		{
 			"step": "runPHP",
-			"code": "<?php define( 'ACCG_DEMO_CONTENT', true ); require '/wordpress/accg-tools/demo-content.php';"
+			"code": "<?php define( 'ESMOAS_DEMO_CONTENT', true ); require '/wordpress/esmoas-tools/demo-content.php';"
 		}
 	]
 }

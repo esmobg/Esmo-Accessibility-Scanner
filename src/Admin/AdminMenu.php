@@ -2,45 +2,47 @@
 /**
  * Registers admin menu pages and renders their templates.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Admin;
+namespace EsmoAccessibilityScanner\Admin;
 
-use AccessibilityGuardian\Plugin;
-use AccessibilityGuardian\Rules\RuleCatalog;
-use AccessibilityGuardian\Scan\ScoreCalculator;
-use AccessibilityGuardian\Storage\IssueRepository;
-use AccessibilityGuardian\Storage\ScanRepository;
+use EsmoAccessibilityScanner\Activation\Installer;
+use EsmoAccessibilityScanner\Plugin;
+use EsmoAccessibilityScanner\Rules\RuleCatalog;
+use EsmoAccessibilityScanner\Scan\ScoreCalculator;
+use EsmoAccessibilityScanner\Scan\UrlProvider;
+use EsmoAccessibilityScanner\Storage\IssueRepository;
+use EsmoAccessibilityScanner\Storage\ScanRepository;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Builds the Accessibility Guardian admin section.
+ * Builds the Esmo Accessibility Scanner admin section.
  */
 final class AdminMenu {
 
 	/**
 	 * Dashboard page slug (also the top-level slug).
 	 */
-	public const SLUG_DASHBOARD = 'accessibility-guardian';
+	public const SLUG_DASHBOARD = 'esmo-accessibility-scanner';
 
 	/**
 	 * Scan page slug.
 	 */
-	public const SLUG_SCAN = 'accessibility-guardian-scan';
+	public const SLUG_SCAN = 'esmo-accessibility-scanner-scan';
 
 	/**
 	 * Issues page slug.
 	 */
-	public const SLUG_ISSUES = 'accessibility-guardian-issues';
+	public const SLUG_ISSUES = 'esmo-accessibility-scanner-issues';
 
 	/**
 	 * Settings page slug.
 	 */
-	public const SLUG_SETTINGS = 'accessibility-guardian-settings';
+	public const SLUG_SETTINGS = 'esmo-accessibility-scanner-settings';
 
 	/**
 	 * Scan repository.
@@ -91,6 +93,38 @@ final class AdminMenu {
 		add_action( 'admin_menu', array( $this, 'add_menu' ) );
 		add_action( 'admin_init', array( $this, 'maybe_save_settings' ) );
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_scan_link' ), 100 );
+		add_action( 'admin_notices', array( $this, 'maybe_show_legacy_plugin_notice' ) );
+	}
+
+	/**
+	 * On the Plugins screen and this plugin's pages, remind administrators to
+	 * delete the pre-1.3.0 plugin ("Accessibility Guardian") once its data is imported.
+	 */
+	public function maybe_show_legacy_plugin_notice(): void {
+		global $hook_suffix;
+
+		if ( ! current_user_can( 'delete_plugins' ) ) {
+			return;
+		}
+
+		if ( 'plugins.php' !== $hook_suffix && ! $this->is_plugin_screen( (string) $hook_suffix ) ) {
+			return;
+		}
+
+		if ( ! function_exists( 'get_plugins' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		// Ask WordPress rather than file_exists(), which OPcache can answer for deleted files.
+		if ( ! isset( get_plugins( '/' . dirname( Installer::LEGACY_PLUGIN ) )[ basename( Installer::LEGACY_PLUGIN ) ] ) ) {
+			return;
+		}
+
+		$message = is_plugin_active( Installer::LEGACY_PLUGIN )
+			? __( 'Esmo Accessibility Scanner is the new name of Accessibility Guardian and has imported its scans and settings. Please deactivate and delete the old Accessibility Guardian plugin.', 'esmo-accessibility-scanner' )
+			: __( 'Esmo Accessibility Scanner is the new name of Accessibility Guardian. Its scans and settings were imported and the old plugin was deactivated, so you can now delete Accessibility Guardian.', 'esmo-accessibility-scanner' );
+
+		printf( '<div class="notice notice-info"><p>%s</p></div>', esc_html( $message ) );
 	}
 
 	/**
@@ -114,8 +148,8 @@ final class AdminMenu {
 
 		$wp_admin_bar->add_node(
 			array(
-				'id'    => 'accg-scan-page',
-				'title' => esc_html__( 'Scan accessibility', 'accessibility-guardian' ),
+				'id'    => 'esmoas-scan-page',
+				'title' => esc_html__( 'Scan accessibility', 'esmo-accessibility-scanner' ),
 				'href'  => add_query_arg(
 					array(
 						'page'    => self::SLUG_SCAN,
@@ -134,8 +168,8 @@ final class AdminMenu {
 		$capability = Plugin::capability();
 
 		$this->hook_suffixes[] = (string) add_menu_page(
-			__( 'Accessibility Guardian', 'accessibility-guardian' ),
-			__( 'Accessibility Guardian', 'accessibility-guardian' ),
+			__( 'Esmo Accessibility Scanner', 'esmo-accessibility-scanner' ),
+			__( 'Accessibility Scanner', 'esmo-accessibility-scanner' ),
 			$capability,
 			self::SLUG_DASHBOARD,
 			array( $this, 'render_dashboard' ),
@@ -145,8 +179,8 @@ final class AdminMenu {
 
 		$this->hook_suffixes[] = (string) add_submenu_page(
 			self::SLUG_DASHBOARD,
-			__( 'Dashboard', 'accessibility-guardian' ),
-			__( 'Dashboard', 'accessibility-guardian' ),
+			__( 'Dashboard', 'esmo-accessibility-scanner' ),
+			__( 'Dashboard', 'esmo-accessibility-scanner' ),
 			$capability,
 			self::SLUG_DASHBOARD,
 			array( $this, 'render_dashboard' )
@@ -154,8 +188,8 @@ final class AdminMenu {
 
 		$this->hook_suffixes[] = (string) add_submenu_page(
 			self::SLUG_DASHBOARD,
-			__( 'Run Scan', 'accessibility-guardian' ),
-			__( 'Run Scan', 'accessibility-guardian' ),
+			__( 'Run Scan', 'esmo-accessibility-scanner' ),
+			__( 'Run Scan', 'esmo-accessibility-scanner' ),
 			$capability,
 			self::SLUG_SCAN,
 			array( $this, 'render_scan' )
@@ -163,8 +197,8 @@ final class AdminMenu {
 
 		$this->hook_suffixes[] = (string) add_submenu_page(
 			self::SLUG_DASHBOARD,
-			__( 'Issues', 'accessibility-guardian' ),
-			__( 'Issues', 'accessibility-guardian' ),
+			__( 'Issues', 'esmo-accessibility-scanner' ),
+			__( 'Issues', 'esmo-accessibility-scanner' ),
 			$capability,
 			self::SLUG_ISSUES,
 			array( $this, 'render_issues' )
@@ -172,9 +206,9 @@ final class AdminMenu {
 
 		$this->hook_suffixes[] = (string) add_submenu_page(
 			self::SLUG_DASHBOARD,
-			__( 'Settings', 'accessibility-guardian' ),
-			__( 'Settings', 'accessibility-guardian' ),
-			$capability,
+			__( 'Settings', 'esmo-accessibility-scanner' ),
+			__( 'Settings', 'esmo-accessibility-scanner' ),
+			Plugin::settings_capability(),
 			self::SLUG_SETTINGS,
 			array( $this, 'render_settings' )
 		);
@@ -233,16 +267,16 @@ final class AdminMenu {
 	public function render_scan(): void {
 		$this->guard();
 
-		// Reading filter params for display only.
-		$post_id   = isset( $_GET['post_id'] ) ? absint( wp_unslash( $_GET['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$scan_type = $post_id > 0 ? 'single' : 'full';
+		// Reading filter params for display only; posts the user cannot read fall back to a full scan.
+		$post_id = isset( $_GET['post_id'] ) ? absint( wp_unslash( $_GET['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$post    = UrlProvider::scannable_post( $post_id );
 
 		$this->render(
 			'scan',
 			array(
-				'post_id'   => $post_id,
-				'scan_type' => $scan_type,
-				'post_title' => $post_id > 0 ? get_the_title( $post_id ) : '',
+				'post_id'    => null !== $post ? $post->ID : 0,
+				'scan_type'  => null !== $post ? 'single' : 'full',
+				'post_title' => null !== $post ? get_the_title( $post ) : '',
 			)
 		);
 	}
@@ -283,7 +317,7 @@ final class AdminMenu {
 				'issues'          => $issues,
 				'catalog'         => $this->catalog,
 				'base_url'        => admin_url( 'admin.php?page=' . self::SLUG_ISSUES ),
-				'settings_url'    => admin_url( 'admin.php?page=' . self::SLUG_SETTINGS ),
+				'settings_url'    => current_user_can( Plugin::settings_capability() ) ? admin_url( 'admin.php?page=' . self::SLUG_SETTINGS ) : '',
 			)
 		);
 	}
@@ -292,15 +326,14 @@ final class AdminMenu {
 	 * Render the settings page.
 	 */
 	public function render_settings(): void {
-		$this->guard();
+		$this->guard( Plugin::settings_capability() );
 
-		$notice = get_transient( 'accg_settings_notice' );
-		if ( is_string( $notice ) && '' !== $notice ) {
-			delete_transient( 'accg_settings_notice' );
-			add_settings_error( 'accg_settings', 'accg_settings_saved', $notice, 'success' );
+		// Display-only flag added by the redirect after saving.
+		if ( ! empty( $_GET['settings-updated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			add_settings_error( 'esmoas_settings', 'esmoas_settings_saved', __( 'Settings saved.', 'esmo-accessibility-scanner' ), 'success' );
 		}
 
-		$settings   = (array) get_option( 'accg_settings', array() );
+		$settings   = (array) get_option( 'esmoas_settings', array() );
 		$post_types = get_post_types( array( 'public' => true ), 'objects' );
 		unset( $post_types['attachment'] );
 
@@ -318,15 +351,15 @@ final class AdminMenu {
 	 * Persist settings when the settings form is submitted.
 	 */
 	public function maybe_save_settings(): void {
-		if ( ! isset( $_POST['accg_settings_submit'] ) ) {
+		if ( ! isset( $_POST['esmoas_settings_submit'] ) ) {
 			return;
 		}
 
-		if ( ! current_user_can( Plugin::capability() ) ) {
-			wp_die( esc_html__( 'You are not allowed to manage these settings.', 'accessibility-guardian' ) );
+		if ( ! current_user_can( Plugin::settings_capability() ) ) {
+			wp_die( esc_html__( 'You are not allowed to manage these settings.', 'esmo-accessibility-scanner' ) );
 		}
 
-		check_admin_referer( 'accg_save_settings' );
+		check_admin_referer( 'esmoas_save_settings' );
 
 		$post_types = array();
 		if ( isset( $_POST['include_post_types'] ) && is_array( $_POST['include_post_types'] ) ) {
@@ -355,24 +388,20 @@ final class AdminMenu {
 			'fixes'              => $fixes,
 		);
 
-		update_option( 'accg_settings', $settings );
+		update_option( 'esmoas_settings', $settings );
 
-		set_transient(
-			'accg_settings_notice',
-			__( 'Settings saved.', 'accessibility-guardian' ),
-			30
-		);
-
-		wp_safe_redirect( admin_url( 'admin.php?page=' . self::SLUG_SETTINGS ) );
+		wp_safe_redirect( add_query_arg( 'settings-updated', '1', admin_url( 'admin.php?page=' . self::SLUG_SETTINGS ) ) );
 		exit;
 	}
 
 	/**
 	 * Capability gate shared by all pages.
+	 *
+	 * @param string $capability Required capability; defaults to Plugin::capability().
 	 */
-	private function guard(): void {
-		if ( ! current_user_can( Plugin::capability() ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'accessibility-guardian' ) );
+	private function guard( string $capability = '' ): void {
+		if ( ! current_user_can( '' !== $capability ? $capability : Plugin::capability() ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'esmo-accessibility-scanner' ) );
 		}
 	}
 
@@ -383,7 +412,7 @@ final class AdminMenu {
 	 * @param array<string, mixed> $context  Variables exposed to the template.
 	 */
 	private function render( string $template, array $context ): void {
-		$file = ACCG_PLUGIN_DIR . 'templates/' . $template . '.php';
+		$file = ESMOAS_PLUGIN_DIR . 'templates/' . $template . '.php';
 
 		if ( ! is_readable( $file ) ) {
 			return;

@@ -2,12 +2,12 @@
 /**
  * JSON report exporter.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Export;
+namespace EsmoAccessibilityScanner\Export;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -25,8 +25,8 @@ final class JsonExporter {
 	 */
 	public function build( array $scan, array $issues ): string {
 		$payload = array(
-			'generator' => 'Accessibility Guardian',
-			'version'   => ACCG_VERSION,
+			'generator' => 'Esmo Accessibility Scanner',
+			'version'   => ESMOAS_VERSION,
 			'generated' => gmdate( 'c' ),
 			'scan'      => array(
 				'id'           => (int) ( $scan['id'] ?? 0 ),
@@ -67,6 +67,6 @@ final class JsonExporter {
 	 * @param int $scan_id Scan id.
 	 */
 	public function filename( int $scan_id ): string {
-		return sprintf( 'accessibility-guardian-scan-%d-%s.json', $scan_id, gmdate( 'Ymd-His' ) );
+		return sprintf( 'esmo-accessibility-scanner-scan-%d-%s.json', $scan_id, gmdate( 'Ymd-His' ) );
 	}
 }

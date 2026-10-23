@@ -2,25 +2,25 @@
 /**
  * Main plugin bootstrap and service container.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian;
+namespace EsmoAccessibilityScanner;
 
-use AccessibilityGuardian\Activation\Installer;
-use AccessibilityGuardian\Admin\AdminMenu;
-use AccessibilityGuardian\Admin\AssetManager;
-use AccessibilityGuardian\Export\ExportController;
-use AccessibilityGuardian\Fixes\AutoFixer;
-use AccessibilityGuardian\Rules\RuleCatalog;
-use AccessibilityGuardian\Scan\ResultNormalizer;
-use AccessibilityGuardian\Scan\ScanController;
-use AccessibilityGuardian\Scan\ScoreCalculator;
-use AccessibilityGuardian\Scan\UrlProvider;
-use AccessibilityGuardian\Storage\IssueRepository;
-use AccessibilityGuardian\Storage\ScanRepository;
+use EsmoAccessibilityScanner\Activation\Installer;
+use EsmoAccessibilityScanner\Admin\AdminMenu;
+use EsmoAccessibilityScanner\Admin\AssetManager;
+use EsmoAccessibilityScanner\Export\ExportController;
+use EsmoAccessibilityScanner\Fixes\AutoFixer;
+use EsmoAccessibilityScanner\Rules\RuleCatalog;
+use EsmoAccessibilityScanner\Scan\ResultNormalizer;
+use EsmoAccessibilityScanner\Scan\ScanController;
+use EsmoAccessibilityScanner\Scan\ScoreCalculator;
+use EsmoAccessibilityScanner\Scan\UrlProvider;
+use EsmoAccessibilityScanner\Storage\IssueRepository;
+use EsmoAccessibilityScanner\Storage\ScanRepository;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -90,13 +90,78 @@ final class Plugin {
 	}
 
 	/**
+	 * Hook names used up to 1.2.0 ("Accessibility Guardian"), still honoured as deprecated aliases.
+	 *
+	 * @var array<string, string>
+	 */
+	private const LEGACY_HOOKS = array(
+		'esmoas_scan_urls'           => 'accg_scan_urls',
+		'esmoas_scan_url_limit'      => 'accg_scan_url_limit',
+		'esmoas_axe_options'         => 'accg_axe_options',
+		'esmoas_required_capability' => 'accg_required_capability',
+		'esmoas_skip_link_target'    => 'accg_skip_link_target',
+		'esmoas_scan_completed'      => 'accg_scan_completed',
+	);
+
+	/**
+	 * Run a filter, first through its deprecated pre-1.3.0 name if anything uses it.
+	 *
+	 * @param string $hook  Current filter name.
+	 * @param mixed  $value Value to filter.
+	 * @param mixed  ...$args Extra arguments.
+	 * @return mixed
+	 */
+	public static function filter( string $hook, $value, ...$args ) {
+		$legacy = self::LEGACY_HOOKS[ $hook ] ?? '';
+		if ( '' !== $legacy && has_filter( $legacy ) ) {
+			$value = apply_filters_deprecated( $legacy, array_merge( array( $value ), $args ), '1.3.0', $hook );
+		}
+
+		return apply_filters( $hook, $value, ...$args ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- $hook is always an esmoas_ hook from LEGACY_HOOKS.
+	}
+
+	/**
+	 * Fire an action, also through its deprecated pre-1.3.0 name if anything uses it.
+	 *
+	 * @param string $hook    Current action name.
+	 * @param mixed  ...$args Arguments.
+	 */
+	public static function action( string $hook, ...$args ): void {
+		$legacy = self::LEGACY_HOOKS[ $hook ] ?? '';
+		if ( '' !== $legacy && has_action( $legacy ) ) {
+			do_action_deprecated( $legacy, $args, '1.3.0', $hook );
+		}
+
+		do_action( $hook, ...$args ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.DynamicHooknameFound -- $hook is always an esmoas_ hook from LEGACY_HOOKS.
+	}
+
+	/**
 	 * Capability required to view reports, run scans, export and change settings.
 	 *
-	 * Filterable through `accg_required_capability`; falls back to
+	 * Filterable through `esmoas_required_capability`; falls back to
 	 * `manage_options` when a filter returns something unusable.
 	 */
 	public static function capability(): string {
-		$capability = apply_filters( 'accg_required_capability', 'manage_options' );
+		$capability = self::filter( 'esmoas_required_capability', 'manage_options' );
+
+		return is_string( $capability ) && '' !== $capability ? $capability : 'manage_options';
+	}
+
+	/**
+	 * Capability required to change the settings, including the site-wide automatic fixes.
+	 *
+	 * Kept separate from capability() so that opening the reports to other roles
+	 * does not also hand out control over front-end output.
+	 */
+	public static function settings_capability(): string {
+		/**
+		 * Filters the capability required to change the plugin settings.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param string $capability Capability name. Default 'manage_options'.
+		 */
+		$capability = apply_filters( 'esmoas_settings_capability', 'manage_options' );
 
 		return is_string( $capability ) && '' !== $capability ? $capability : 'manage_options';
 	}
