@@ -13,13 +13,31 @@ declare(strict_types=1);
 defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
 
 /**
- * Remove the plugin's tables and options from the current site.
+ * Whether Accessibility Guardian (1.2.0 and earlier) is still installed. Its
+ * tables and options then belong to it and are kept, so it can be reactivated.
  */
-function esmoas_uninstall_site(): void {
+function esmoas_legacy_plugin_installed(): bool {
+	if ( ! function_exists( 'get_plugins' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+	}
+
+	return isset( get_plugins( '/accessibility-guardian' )['accessibility-guardian.php'] );
+}
+
+/**
+ * Remove the plugin's tables and options from the current site.
+ *
+ * @param bool $remove_legacy Also remove leftovers of Accessibility Guardian (prefix accg_).
+ */
+function esmoas_uninstall_site( bool $remove_legacy ): void {
 	global $wpdb;
 
-	// Current tables plus any left over from 1.2.0 and earlier (prefix accg_, "Accessibility Guardian").
-	foreach ( array( 'esmoas_scans', 'esmoas_issues', 'esmoas_history', 'accg_scans', 'accg_issues', 'accg_history' ) as $esmoas_suffix ) {
+	$esmoas_suffixes = array( 'esmoas_scans', 'esmoas_issues', 'esmoas_history' );
+	if ( $remove_legacy ) {
+		$esmoas_suffixes = array_merge( $esmoas_suffixes, array( 'accg_scans', 'accg_issues', 'accg_history' ) );
+	}
+
+	foreach ( $esmoas_suffixes as $esmoas_suffix ) {
 		$esmoas_table = $wpdb->prefix . $esmoas_suffix;
 		// Table name cannot be parameterized; it is the site prefix plus a hardcoded suffix.
 		$wpdb->query( "DROP TABLE IF EXISTS {$esmoas_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,PluginCheck.Security.DirectDB.UnescapedDBParameter
@@ -27,10 +45,17 @@ function esmoas_uninstall_site(): void {
 
 	delete_option( 'esmoas_settings' );
 	delete_option( 'esmoas_db_version' );
-	delete_option( 'accg_settings' );
-	delete_option( 'accg_db_version' );
-	delete_transient( 'accg_settings_notice' );
+	delete_option( 'esmoas_legacy_import' );
+	delete_transient( 'esmoas_legacy_import_retry' );
+
+	if ( $remove_legacy ) {
+		delete_option( 'accg_settings' );
+		delete_option( 'accg_db_version' );
+		delete_transient( 'accg_settings_notice' );
+	}
 }
+
+$esmoas_remove_legacy = ! esmoas_legacy_plugin_installed();
 
 if ( is_multisite() ) {
 	$esmoas_site_ids = get_sites(
@@ -42,9 +67,9 @@ if ( is_multisite() ) {
 
 	foreach ( $esmoas_site_ids as $esmoas_site_id ) {
 		switch_to_blog( (int) $esmoas_site_id );
-		esmoas_uninstall_site();
+		esmoas_uninstall_site( $esmoas_remove_legacy );
 		restore_current_blog();
 	}
 } else {
-	esmoas_uninstall_site();
+	esmoas_uninstall_site( $esmoas_remove_legacy );
 }

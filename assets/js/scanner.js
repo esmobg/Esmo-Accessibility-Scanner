@@ -125,22 +125,45 @@
 		return Array.from( value ).slice( 0, max ).join( '' );
 	}
 
-	// The server keeps at most 150 rules per group and 25 elements per rule.
-	function compactResult( result, maxNodes, maxHtml ) {
-		return ( result || [] ).slice( 0, 150 ).map( function ( rule ) {
+	/**
+	 * Detail kept per page, from full to minimal. The first level is what the
+	 * server stores at most (150 rules per group, 25 elements per rule); the
+	 * last one always fits the server's 512 KB limit.
+	 */
+	var PAYLOAD_LEVELS = [
+		{ rules: 150, nodes: 25, html: 2000, text: 1000, help: 500, target: 1000 },
+		{ rules: 150, nodes: 5, html: 300, text: 300, help: 500, target: 500 },
+		{ rules: 100, nodes: 1, html: 150, text: 100, help: 200, target: 300 },
+		{ rules: 50, nodes: 1, html: 0, text: 0, help: 200, target: 200 }
+	];
+	var PAYLOAD_LIMIT = 500000;
+
+	/**
+	 * An axe target (selectors, nested for shadow DOM) as one shortened selector
+	 * path; the server joins the parts the same way.
+	 */
+	function clipTarget( target, max ) {
+		var parts = ( Array.isArray( target ) ? target : [ target ] ).map( function ( part ) {
+			return Array.isArray( part ) ? part.join( ' ' ) : String( part || '' );
+		} );
+		return [ clip( parts.join( ' > ' ), max ) ];
+	}
+
+	function compactResult( result, level ) {
+		return ( result || [] ).slice( 0, level.rules ).map( function ( rule ) {
 			var tags = rule.tags || [];
 			return {
 				id: rule.id,
 				impact: rule.impact || '',
-				help: clip( rule.help, 500 ),
+				help: clip( rule.help, level.help ),
 				bestPractice: tags.indexOf( 'best-practice' ) !== -1 && ! tags.some( function ( tag ) {
 					return /^wcag/.test( tag );
 				} ),
-				nodes: ( rule.nodes || [] ).slice( 0, maxNodes || 25 ).map( function ( node ) {
+				nodes: ( rule.nodes || [] ).slice( 0, level.nodes ).map( function ( node ) {
 					return {
-						html: clip( node.html, maxHtml || 2000 ),
-						target: node.target || [],
-						failureSummary: clip( node.failureSummary, 1000 )
+						html: clip( node.html, level.html ),
+						target: clipTarget( node.target, level.target ),
+						failureSummary: clip( node.failureSummary, level.text )
 					};
 				} )
 			};
@@ -148,21 +171,22 @@
 	}
 
 	/**
-	 * JSON body for one page, kept under the server's 512 KB limit on very noisy pages.
+	 * JSON body for one page: the most detailed level that stays under the limit.
 	 */
 	function payloadFor( entry, results ) {
-		var payload = {
-			url: entry.url,
-			post_id: entry.post_id,
-			violations: compactResult( results.violations ),
-			incomplete: compactResult( results.incomplete )
-		};
-		var body = JSON.stringify( payload );
+		var body = '';
 
-		if ( new TextEncoder().encode( body ).length > 500000 ) {
-			payload.violations = compactResult( results.violations, 5, 300 );
-			payload.incomplete = compactResult( results.incomplete, 5, 300 );
-			body = JSON.stringify( payload );
+		for ( var i = 0; i < PAYLOAD_LEVELS.length; i++ ) {
+			body = JSON.stringify( {
+				url: entry.url,
+				post_id: entry.post_id,
+				violations: compactResult( results.violations, PAYLOAD_LEVELS[ i ] ),
+				incomplete: compactResult( results.incomplete, PAYLOAD_LEVELS[ i ] )
+			} );
+
+			if ( new TextEncoder().encode( body ).length <= PAYLOAD_LIMIT ) {
+				break;
+			}
 		}
 
 		return body;

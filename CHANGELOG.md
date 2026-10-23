@@ -15,7 +15,8 @@ Renamed to **Esmo Accessibility Scanner** for the WordPress.org directory, plus 
 - Activation copies the 1.2.0 scans, issues, score history and settings (portable `INSERT … SELECT`, which also works on SQLite), renames stored custom rule ids, and deactivates Accessibility Guardian so automatic fixes are not applied twice. The old data stays until Accessibility Guardian is deleted.
 - A notice on the Plugins screen and the plugin's pages explains that the old plugin can be deleted.
 - The six `accg_` hooks keep working through `apply_filters_deprecated()` / `do_action_deprecated()`.
-- Uninstall also removes leftover `accg_` tables and options.
+- Uninstall also removes leftover `accg_` tables and options, but only when Accessibility Guardian is no longer installed.
+- The import is recorded separately (`esmoas_legacy_import`); if a copy fails, for example because of a database timeout, it is retried at most once an hour instead of being skipped for good.
 
 ### Security
 - `esmoas_save_results` validates everything it receives: the page URL must be an http(s) URL on the site; a scan accepts at most one save per queued page and none after it has finished; at most 150 rules per group, 25 elements per rule and 2,500 rows per page; rule ids, impacts and text lengths are checked; non-scalar values are ignored.
@@ -34,7 +35,7 @@ Renamed to **Esmo Accessibility Scanner** for the WordPress.org directory, plus 
 ### Fixed
 - A running scan is marked as failed only after 15 minutes without progress (new `updated_at` column), not one hour after it started, so long scans are no longer lost when another scan starts.
 - HTML snippets are cut by code points: an emoji split in half used to make the whole page's results invalid JSON.
-- Very noisy pages trim their payload to stay under the 512 KB limit instead of failing.
+- Very noisy pages send less detail, step by step, until the results fit the 512 KB limit, instead of losing the page.
 - Page titles and term names in the scan log no longer show HTML entities.
 - Repositories resolve the table prefix per query, so they follow `switch_to_blog()`.
 - Long HTML snippets on the Issues page wrap instead of scrolling sideways (axe `scrollable-region-focusable`, WCAG 1.4.10 reflow).

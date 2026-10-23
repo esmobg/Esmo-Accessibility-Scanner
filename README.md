@@ -238,8 +238,9 @@ Repository-only folders (not in the release zip): `tests/` (PHPUnit), `bin/` (bu
 | `{prefix}esmoas_history` | table | Score history for the progress chart (complete scans only) |
 | `esmoas_settings` | option | Post types, term archives, WCAG level, best-practice checks, enabled fixes |
 | `esmoas_db_version` | option | Installed schema version |
+| `esmoas_legacy_import` | option | Progress of the one-time import from Accessibility Guardian (`settings`, then `done`); a failed copy is retried at most once an hour |
 
-Deleting the plugin removes all of it, on every site of a network, plus anything left over from Accessibility Guardian (`accg_` tables and options).
+Deleting the plugin removes all of it, on every site of a network. Leftovers from Accessibility Guardian (`accg_` tables and options) are removed too, unless Accessibility Guardian is still installed: then they belong to it.
 
 ### Endpoints
 

@@ -44,6 +44,17 @@ final class Installer {
 	public const LEGACY_PLUGIN = 'accessibility-guardian/accessibility-guardian.php';
 
 	/**
+	 * Progress of the import from 1.2.0: "settings" once the settings are copied,
+	 * "done" once every table is copied.
+	 */
+	public const IMPORT_OPTION = 'esmoas_legacy_import';
+
+	/**
+	 * Transient that delays the next attempt after a failed import.
+	 */
+	public const IMPORT_RETRY_TRANSIENT = 'esmoas_legacy_import_retry';
+
+	/**
 	 * Columns of the 1.2.0 tables, copied as they are into the new tables.
 	 *
 	 * @var array<string, array<int, string>>
@@ -96,11 +107,22 @@ final class Installer {
 	 * Ensure the schema and default settings exist. Cheap when up to date.
 	 */
 	public static function maybe_upgrade(): void {
-		if ( get_option( self::DB_VERSION_OPTION ) === self::DB_VERSION ) {
+		if ( get_option( self::DB_VERSION_OPTION ) !== self::DB_VERSION ) {
+			self::install_site();
 			return;
 		}
 
-		self::install_site();
+		// An import that failed (for example a database timeout) is retried, at most once an hour.
+		if ( self::legacy_import_pending() && false === get_transient( self::IMPORT_RETRY_TRANSIENT ) ) {
+			self::import_legacy_data();
+		}
+	}
+
+	/**
+	 * Whether this site still has data from 1.2.0 that has not been fully imported.
+	 */
+	private static function legacy_import_pending(): bool {
+		return false !== get_option( self::LEGACY_PREFIX . 'db_version', false ) && 'done' !== get_option( self::IMPORT_OPTION, '' );
 	}
 
 	/**
@@ -152,12 +174,9 @@ final class Installer {
 	 * Install tables and default settings for the current site.
 	 */
 	private static function install_site(): void {
-		// Decided before install_tables(), which records the new schema version.
-		$import = false !== get_option( self::LEGACY_PREFIX . 'db_version', false ) && false === get_option( self::DB_VERSION_OPTION, false );
-
 		self::install_tables();
 
-		if ( $import ) {
+		if ( self::legacy_import_pending() ) {
 			self::import_legacy_data();
 		}
 
@@ -167,14 +186,25 @@ final class Installer {
 	/**
 	 * Copy data from version 1.2.0 and earlier (plugin "Accessibility Guardian", prefix accg_).
 	 *
-	 * Runs once per site, right after the new tables are created. Rows are
-	 * copied with plain INSERT ... SELECT (portable to every database WordPress
-	 * supports), custom rule ids move from "ag-" to "esmoas-" and the settings
-	 * are copied. The old tables and options are left alone: deleting the old
-	 * plugin removes them, and until then it can still be reactivated.
+	 * Runs per site, right after the new tables are created, until it succeeds
+	 * (IMPORT_OPTION). The settings are copied once; rows are copied with plain
+	 * INSERT ... SELECT (portable to every database WordPress supports) and
+	 * custom rule ids move from "ag-" to "esmoas-". The old tables and options
+	 * are left alone: deleting the old plugin removes them, and until then it
+	 * can still be reactivated.
 	 */
 	private static function import_legacy_data(): void {
 		global $wpdb;
+
+		if ( false === get_option( self::IMPORT_OPTION, false ) ) {
+			$settings = get_option( self::LEGACY_PREFIX . 'settings', false );
+			if ( is_array( $settings ) ) {
+				update_option( 'esmoas_settings', $settings );
+			}
+			update_option( self::IMPORT_OPTION, 'settings' );
+		}
+
+		$complete = true;
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		foreach ( self::LEGACY_COLUMNS as $name => $columns ) {
@@ -190,12 +220,15 @@ final class Installer {
 				continue;
 			}
 
-			$list = implode( ', ', $columns );
-			$wpdb->query( $wpdb->prepare( "INSERT INTO %i ( {$list} ) SELECT {$list} FROM %i", $new, $old ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- $list is a fixed column list from LEGACY_COLUMNS.
+			$list   = implode( ', ', $columns );
+			$copied = $wpdb->query( $wpdb->prepare( "INSERT INTO %i ( {$list} ) SELECT {$list} FROM %i", $new, $old ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- $list is a fixed column list from LEGACY_COLUMNS.
+			if ( false === $copied ) {
+				$complete = false;
+			}
 		}
 
 		// Supplemental rule ids were prefixed "ag-" before 1.3.0.
-		$wpdb->query(
+		$renamed = $wpdb->query(
 			$wpdb->prepare(
 				'UPDATE %i SET rule_id = CONCAT( %s, SUBSTRING( rule_id, 4 ) ) WHERE rule_id LIKE %s',
 				$wpdb->prefix . 'esmoas_issues',
@@ -205,9 +238,11 @@ final class Installer {
 		);
 		// phpcs:enable
 
-		$settings = get_option( self::LEGACY_PREFIX . 'settings', false );
-		if ( is_array( $settings ) ) {
-			update_option( 'esmoas_settings', $settings );
+		if ( $complete && false !== $renamed ) {
+			update_option( self::IMPORT_OPTION, 'done' );
+			delete_transient( self::IMPORT_RETRY_TRANSIENT );
+		} else {
+			set_transient( self::IMPORT_RETRY_TRANSIENT, 1, HOUR_IN_SECONDS );
 		}
 	}
 
