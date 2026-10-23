@@ -185,19 +185,31 @@ final class ScanController {
 			wp_send_json_error( array( 'message' => __( 'The scanned page is not on this site.', 'esmo-accessibility-scanner' ) ), 400 );
 		}
 
-		// Only pages this scan queued, each once, and none once the scan has finished.
-		$post_id = $this->scans->claim_page( $scan_id, $payload['url'] );
+		// Only pages this scan queued and has not saved yet; the post id comes from the queue.
+		$post_id = $this->scans->queued_post_id( $scan_id, $payload['url'] );
 		if ( null === $post_id ) {
 			wp_send_json_error( array( 'message' => __( 'This page is not waiting for results in this scan.', 'esmo-accessibility-scanner' ) ), 409 );
 		}
 		$payload['post_id'] = $post_id;
 
-		$issues   = $this->normalizer->normalize( $payload );
-		$inserted = $this->issues->insert_batch( $scan_id, $issues );
+		$issues = $this->normalizer->normalize( $payload );
+		$ids    = $this->issues->insert_batch( $scan_id, $issues );
+
+		// A page counts as scanned only with all of its rows stored, and only once:
+		// the rows are written first and removed again if storing or claiming fails.
+		if ( count( $ids ) !== count( $issues ) ) {
+			$this->issues->delete_ids( $scan_id, $ids );
+			wp_send_json_error( array( 'message' => __( 'The results of this page could not be stored.', 'esmo-accessibility-scanner' ) ), 500 );
+		}
+
+		if ( ! $this->scans->claim_page( $scan_id, $payload['url'] ) ) {
+			$this->issues->delete_ids( $scan_id, $ids );
+			wp_send_json_error( array( 'message' => __( 'This page is not waiting for results in this scan.', 'esmo-accessibility-scanner' ) ), 409 );
+		}
 
 		wp_send_json_success(
 			array(
-				'inserted' => $inserted,
+				'inserted' => count( $ids ),
 				'counts'   => $this->normalizer->severity_counts( $issues ),
 			)
 		);

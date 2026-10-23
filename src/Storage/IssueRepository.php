@@ -35,13 +35,13 @@ final class IssueRepository {
 	 *
 	 * @param int                                   $scan_id Scan id.
 	 * @param array<int, array<string, mixed>>      $issues  Normalized issue rows.
-	 * @return int Number of rows inserted.
+	 * @return array<int, int> Ids of the rows inserted.
 	 */
-	public function insert_batch( int $scan_id, array $issues ): int {
+	public function insert_batch( int $scan_id, array $issues ): array {
 		global $wpdb;
 
-		$count = 0;
-		$now   = current_time( 'mysql' );
+		$ids = array();
+		$now = current_time( 'mysql' );
 
 		foreach ( $issues as $issue ) {
 			$inserted = $wpdb->insert(
@@ -68,11 +68,32 @@ final class IssueRepository {
 			);
 
 			if ( $inserted ) {
-				++$count;
+				$ids[] = (int) $wpdb->insert_id;
 			}
 		}
 
-		return $count;
+		return $ids;
+	}
+
+	/**
+	 * Remove rows of a scan again (used when a page's results cannot be stored completely).
+	 *
+	 * @param int             $scan_id Scan id.
+	 * @param array<int, int> $ids     Row ids returned by insert_batch().
+	 */
+	public function delete_ids( int $scan_id, array $ids ): void {
+		global $wpdb;
+
+		foreach ( $ids as $id ) {
+			$wpdb->delete(
+				$this->table(),
+				array(
+					'id'      => (int) $id,
+					'scan_id' => $scan_id,
+				),
+				array( '%d', '%d' )
+			);
+		}
 	}
 
 	/**

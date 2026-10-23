@@ -120,7 +120,7 @@ The unminified axe-core 4.10.2 source is included as `assets/js/axe.js`. The pro
 
 = 1.3.0 =
 * Renamed from "Accessibility Guardian" to "Esmo Accessibility Scanner" for the WordPress.org directory. The slug and text domain are now `esmo-accessibility-scanner`.
-* New: activating the plugin imports the scans, issues, score history and settings of Accessibility Guardian 1.2 and deactivates it. If the old plugin is still active somewhere (for example network-wide), only its automatic fixes run, so nothing is applied twice.
+* New: activating the plugin imports the scans, issues, score history and settings of Accessibility Guardian 1.2 and deactivates it. If the old plugin is still active, only its automatic fixes run, so nothing is applied twice. On multisite, network-activate it when the old plugin is network-active.
 * New: developer hooks use the `esmoas_` prefix. The `accg_` names still work but are deprecated.
 * New: `esmoas_settings_capability` filter. Settings, including the automatic fixes, stay limited to administrators even when the reports are opened to other roles.
 * Security: scan results sent by the browser are checked on the server. The page must be one the scan queued on your site, each page can be saved only once, and the number of rules, elements and characters is limited.

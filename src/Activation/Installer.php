@@ -78,6 +78,22 @@ final class Installer {
 	public static function activate( $network_wide = false ): void {
 		$network_wide = is_multisite() && $network_wide;
 
+		// Next to a network-active Accessibility Guardian, its screens would keep writing
+		// scans that are never imported. Network activation imports every site and switches it off.
+		if ( is_multisite() && ! $network_wide ) {
+			if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+
+			if ( is_plugin_active_for_network( self::LEGACY_PLUGIN ) ) {
+				wp_die(
+					esc_html__( 'Accessibility Guardian, the previous version of this plugin, is active on the whole network. Network-activate Esmo Accessibility Scanner instead: it imports the data of every site and deactivates Accessibility Guardian.', 'esmo-accessibility-scanner' ),
+					esc_html__( 'Plugin not activated', 'esmo-accessibility-scanner' ),
+					array( 'back_link' => true )
+				);
+			}
+		}
+
 		self::deactivate_legacy_plugin( $network_wide );
 
 		if ( $network_wide ) {

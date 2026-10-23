@@ -98,7 +98,28 @@ final class ScanRepository {
 	}
 
 	/**
-	 * Claim a queued page of a running scan for saving its results.
+	 * Post id of a page the scan queued and has not saved yet.
+	 *
+	 * @param int    $scan_id Scan id.
+	 * @param string $url     Page URL exactly as it was queued.
+	 * @return int|null Null when the page is not waiting for results.
+	 */
+	public function queued_post_id( int $scan_id, string $url ): ?int {
+		global $wpdb;
+
+		$post_id = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT post_id FROM {$this->pages_table()} WHERE scan_id = %d AND url_hash = %s AND saved = 0", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$scan_id,
+				md5( $url )
+			)
+		);
+
+		return null === $post_id ? null : (int) $post_id;
+	}
+
+	/**
+	 * Mark a queued page of a running scan as saved and count it.
 	 *
 	 * Each queued URL can be claimed once (one atomic UPDATE), so repeated or
 	 * forged requests can neither duplicate a page's issues nor add pages the
@@ -106,9 +127,9 @@ final class ScanRepository {
 	 *
 	 * @param int    $scan_id Scan id.
 	 * @param string $url     Page URL exactly as it was queued.
-	 * @return int|null The queued post id, or null when the page cannot be saved.
+	 * @return bool Whether this call claimed the page.
 	 */
-	public function claim_page( int $scan_id, string $url ): ?int {
+	public function claim_page( int $scan_id, string $url ): bool {
 		global $wpdb;
 
 		$hash    = md5( $url );
@@ -121,7 +142,7 @@ final class ScanRepository {
 		);
 
 		if ( 1 !== $claimed ) {
-			return null;
+			return false;
 		}
 
 		$counted = $wpdb->query(
@@ -132,17 +153,7 @@ final class ScanRepository {
 			)
 		);
 
-		if ( 1 !== $counted ) {
-			return null;
-		}
-
-		return (int) $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT post_id FROM {$this->pages_table()} WHERE scan_id = %d AND url_hash = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$scan_id,
-				$hash
-			)
-		);
+		return 1 === $counted;
 	}
 
 	/**
