@@ -98,7 +98,9 @@ final class AdminMenu {
 
 	/**
 	 * On the Plugins screen and this plugin's pages, remind administrators to
-	 * delete the pre-1.3.0 plugin ("Accessibility Guardian") once its data is imported.
+	 * delete the pre-1.3.0 plugin ("Accessibility Guardian") once its data is
+	 * imported, and warn them not to while the import is still pending: deleting
+	 * the old plugin removes the data that has not been copied yet.
 	 */
 	public function maybe_show_legacy_plugin_notice(): void {
 		global $hook_suffix;
@@ -117,6 +119,14 @@ final class AdminMenu {
 
 		// Ask WordPress rather than file_exists(), which OPcache can answer for deleted files.
 		if ( ! isset( get_plugins( '/' . dirname( Installer::LEGACY_PLUGIN ) )[ basename( Installer::LEGACY_PLUGIN ) ] ) ) {
+			return;
+		}
+
+		if ( Installer::legacy_import_pending() ) {
+			printf(
+				'<div class="notice notice-warning"><p>%s</p></div>',
+				esc_html__( 'Esmo Accessibility Scanner has not finished importing the scans of Accessibility Guardian yet and will try again automatically. Do not delete Accessibility Guardian until this message is gone, or its remaining data will be lost.', 'esmo-accessibility-scanner' )
+			);
 			return;
 		}
 

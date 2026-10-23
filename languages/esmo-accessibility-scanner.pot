@@ -9,14 +9,14 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-23T12:14:19+00:00\n"
+"POT-Creation-Date: 2026-10-23T12:54:32+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: esmo-accessibility-scanner\n"
 
 #. Plugin Name of the plugin
 #: esmo-accessibility-scanner.php
-#: src/Admin/AdminMenu.php:171
+#: src/Admin/AdminMenu.php:181
 #: templates/dashboard.php:62
 msgid "Esmo Accessibility Scanner"
 msgstr ""
@@ -45,51 +45,55 @@ msgstr ""
 msgid "Esmo Accessibility Scanner requires PHP 8.0 or later."
 msgstr ""
 
-#: src/Admin/AdminMenu.php:124
+#: src/Admin/AdminMenu.php:128
+msgid "Esmo Accessibility Scanner has not finished importing the scans of Accessibility Guardian yet and will try again automatically. Do not delete Accessibility Guardian until this message is gone, or its remaining data will be lost."
+msgstr ""
+
+#: src/Admin/AdminMenu.php:134
 msgid "Esmo Accessibility Scanner is the new name of Accessibility Guardian and has imported its scans and settings. While Accessibility Guardian is active, only its automatic fixes are applied. Please deactivate and delete it."
 msgstr ""
 
-#: src/Admin/AdminMenu.php:125
+#: src/Admin/AdminMenu.php:135
 msgid "Esmo Accessibility Scanner is the new name of Accessibility Guardian. Its scans and settings were imported and the old plugin was deactivated, so you can now delete Accessibility Guardian."
 msgstr ""
 
-#: src/Admin/AdminMenu.php:152
+#: src/Admin/AdminMenu.php:162
 msgid "Scan accessibility"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:172
+#: src/Admin/AdminMenu.php:182
 msgid "Accessibility Scanner"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:182
-#: src/Admin/AdminMenu.php:183
+#: src/Admin/AdminMenu.php:192
+#: src/Admin/AdminMenu.php:193
 msgid "Dashboard"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:191
-#: src/Admin/AdminMenu.php:192
+#: src/Admin/AdminMenu.php:201
+#: src/Admin/AdminMenu.php:202
 msgid "Run Scan"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:200
-#: src/Admin/AdminMenu.php:201
+#: src/Admin/AdminMenu.php:210
+#: src/Admin/AdminMenu.php:211
 msgid "Issues"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:209
-#: src/Admin/AdminMenu.php:210
+#: src/Admin/AdminMenu.php:219
+#: src/Admin/AdminMenu.php:220
 msgid "Settings"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:333
+#: src/Admin/AdminMenu.php:343
 msgid "Settings saved."
 msgstr ""
 
-#: src/Admin/AdminMenu.php:359
+#: src/Admin/AdminMenu.php:369
 msgid "You are not allowed to manage these settings."
 msgstr ""
 
-#: src/Admin/AdminMenu.php:404
+#: src/Admin/AdminMenu.php:414
 msgid "You do not have permission to access this page."
 msgstr ""
 
@@ -213,15 +217,15 @@ msgstr ""
 msgid "Scan not found."
 msgstr ""
 
-#: src/Fixes/AutoFixer.php:149
+#: src/Fixes/AutoFixer.php:156
 msgid "(opens in a new window)"
 msgstr ""
 
-#: src/Fixes/AutoFixer.php:196
+#: src/Fixes/AutoFixer.php:203
 msgid "Skip to content"
 msgstr ""
 
-#: src/Fixes/AutoFixer.php:213
+#: src/Fixes/AutoFixer.php:220
 msgid "Search"
 msgstr ""
 

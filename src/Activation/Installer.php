@@ -121,7 +121,7 @@ final class Installer {
 	/**
 	 * Whether this site still has data from 1.2.0 that has not been fully imported.
 	 */
-	private static function legacy_import_pending(): bool {
+	public static function legacy_import_pending(): bool {
 		return false !== get_option( self::LEGACY_PREFIX . 'db_version', false ) && 'done' !== get_option( self::IMPORT_OPTION, '' );
 	}
 
