@@ -371,7 +371,7 @@ wp plugin check esmo-accessibility-scanner
 npm install --no-save playwright && npx playwright install chromium
 # with the Playground server from above running:
 node bin/screenshots/capture.js http://127.0.0.1:9400 wp-org-assets
-node bin/screenshots/render-brand.js     # icon-128/256 and banner-772/1544 from icon.svg and brand.html
+node bin/screenshots/render-brand.js     # icon-128/256 and banner-772/1544 from icon.html and brand.html
 ```
 
 ### Website
