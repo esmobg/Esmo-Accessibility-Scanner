@@ -2,7 +2,7 @@
 
 All notable changes to Esmo Accessibility Scanner, called Accessibility Guardian up to 1.2.0. The WordPress.org changelog lives in [`readme.txt`](readme.txt).
 
-## 1.3.0 — 2026-10-23
+## 1.3.0 — 2026-10-25
 
 Renamed to **Esmo Accessibility Scanner** for the WordPress.org directory, plus a security hardening pass.
 
