@@ -3,7 +3,8 @@
  *
  *   node bin/screenshots/render-brand.js
  *
- * Inputs:  wp-org-assets/icon.svg, bin/screenshots/brand.html
+ * Inputs:  bin/screenshots/icon.html, bin/screenshots/brand.html (both use the
+ *          logo files in bin/screenshots/brand/)
  * Outputs: wp-org-assets/icon-128x128.png, icon-256x256.png,
  *          banner-772x250.png, banner-1544x500.png
  * Requires the `playwright` package and its Chromium build.
@@ -21,12 +22,12 @@ const assets = path.join( root, 'wp-org-assets' );
 	const browser = await chromium.launch();
 
 	for ( const size of [ 128, 256 ] ) {
-		// The SVG has no width/height, so opened on its own it fills the viewport.
+		// The icon page fills the viewport, so one page serves both sizes.
 		const page = await browser.newPage( { viewport: { width: size, height: size } } );
-		await page.goto( pathToFileURL( path.join( assets, 'icon.svg' ) ).href );
+		await page.goto( pathToFileURL( path.join( __dirname, 'icon.html' ) ).href );
 		await page.waitForLoadState( 'load' );
 		const file = path.join( assets, `icon-${ size }x${ size }.png` );
-		await page.screenshot( { path: file, omitBackground: true } );
+		await page.screenshot( { path: file } );
 		console.log( 'saved', file );
 		await page.close();
 	}

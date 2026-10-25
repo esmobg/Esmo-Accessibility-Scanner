@@ -87,8 +87,7 @@ unzip ../esmo-accessibility-scanner-1.3.0.zip -d /tmp/esmoas
 cp -R /tmp/esmoas/esmo-accessibility-scanner/. trunk/
 
 # Listing assets: icons, banners, screenshots and the Live Preview blueprint.
-cp ../Esmo-Accessibility-Scanner/wp-org-assets/icon.svg \
-   ../Esmo-Accessibility-Scanner/wp-org-assets/icon-128x128.png \
+cp ../Esmo-Accessibility-Scanner/wp-org-assets/icon-128x128.png \
    ../Esmo-Accessibility-Scanner/wp-org-assets/icon-256x256.png \
    ../Esmo-Accessibility-Scanner/wp-org-assets/banner-772x250.png \
    ../Esmo-Accessibility-Scanner/wp-org-assets/banner-1544x500.png \

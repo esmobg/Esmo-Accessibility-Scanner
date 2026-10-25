@@ -1,7 +1,8 @@
 <!doctype html>
 <!--
 	Source for the WordPress.org banner. Rendered by bin/screenshots/render-brand.js
-	at 772x250 and 1544x500 (2x). The icon comes from wp-org-assets/icon.svg.
+	at 772x250 and 1544x500 (2x). The eye comes from bin/screenshots/brand/esmo-eye.png
+	and sits on a white tile, so its navy pupil stays visible on the dark background.
 -->
 <html lang="en">
 <head>
@@ -34,15 +35,28 @@
 		width: 8px;
 		background: #8fb0ff;
 	}
-	.icon { width: 132px; height: 132px; flex: none; filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.35)); }
+	.icon {
+		display: grid;
+		place-items: center;
+		box-sizing: border-box;
+		width: 132px;
+		height: 132px;
+		flex: none;
+		padding: 12px;
+		border-radius: 30px;
+		background: #ffffff;
+		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+	}
+	.icon img { width: 100%; height: auto; }
+	.text { flex: 1; min-width: 0; }
 	h1 { margin: 0; font-size: 36px; font-weight: 700; letter-spacing: -0.01em; }
 	p { margin: 8px 0 0; font-size: 17px; color: #d3defa; }
-	ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+	ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 0; padding: 0; list-style: none; }
 	li {
-		padding: 4px 11px;
+		padding: 4px 9px;
 		border: 1px solid rgba(201, 216, 255, 0.55);
 		border-radius: 999px;
-		font-size: 13px;
+		font-size: 12px;
 		font-weight: 600;
 		color: #ffffff;
 		background: rgba(201, 216, 255, 0.12);
@@ -51,8 +65,8 @@
 </head>
 <body>
 	<div class="banner">
-		<img class="icon" src="../../wp-org-assets/icon.svg" alt="">
-		<div>
+		<div class="icon"><img src="brand/esmo-eye.png" alt=""></div>
+		<div class="text">
 			<h1>Esmo Accessibility Scanner</h1>
 			<p>WCAG 2.2 AA audits with axe-core, right inside WordPress</p>
 			<ul>
