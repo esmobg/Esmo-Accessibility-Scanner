@@ -1,33 +1,37 @@
-/* Accessibility Guardian website. Every text/background pair meets WCAG AA in both themes. */
+/* Esmo Accessibility Scanner website, in the Esmo brand blue (#2356EB).
+   Every text/background pair meets WCAG AA in both themes. */
 
 :root {
 	color-scheme: light;
+	--brand: #2356eb;
 	--bg: #ffffff;
-	--surface: #f6f8fa;
+	--surface: #f5f7fc;
 	--card: #ffffff;
-	--text: #1d2327;
-	--muted: #4f5a65;
-	--accent: #16713a;
+	--text: #141b2d;
+	--muted: #4d5872;
+	--accent: #2356eb;
 	--accent-contrast: #ffffff;
-	--accent-soft: #e8f6ee;
-	--accent-soft-text: #0f5a2d;
-	--border: #d8dee4;
-	--ui-border: #8a96a3;
-	--focus: #13202f;
+	--accent-soft: #eaf0ff;
+	--accent-soft-text: #1a3fb8;
+	--border: #dbe2ef;
+	--ui-border: #8090ad;
+	--focus: #0d1b4d;
 	--focus-halo: #ffffff;
-	--shadow: 0 1px 2px rgba(19, 32, 47, 0.06), 0 8px 24px rgba(19, 32, 47, 0.08);
+	--shadow: 0 1px 2px rgba(13, 27, 77, 0.06), 0 8px 24px rgba(13, 27, 77, 0.08);
 	--header-bg: rgba(255, 255, 255, 0.86);
-	--code-bg: #13202f;
-	--code-text: #e6edf3;
+	--logo: #2356eb;
+	--code-bg: #0d1b4d;
+	--code-text: #e8edf7;
 
-	/* Hero and final call-to-action stay dark in both themes. */
-	--hero-bg: #13202f;
-	--hero-bg-2: #1b3045;
+	/* Hero and final call-to-action: deep brand blue in both themes. */
+	--hero-bg: #0d1b4d;
+	--hero-bg-2: #1d3fae;
 	--hero-text: #ffffff;
-	--hero-muted: #c9d6e3;
-	--hero-accent: #5fe39a;
-	--hero-button-text: #08130d;
-	--hero-border: #a9b8c6;
+	--hero-muted: #d3defa;
+	--hero-accent: #c9d8ff;
+	--hero-button-bg: #ffffff;
+	--hero-button-text: #2356eb;
+	--hero-border: #c9d8ff;
 
 	--sev-critical: #b32d2e;
 	--sev-major: #b35309;
@@ -44,22 +48,23 @@
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme="light"]) {
 		color-scheme: dark;
-		--bg: #0f1923;
-		--surface: #162433;
-		--card: #162433;
-		--text: #e6edf3;
-		--muted: #a9b8c6;
-		--accent: #5fe39a;
-		--accent-contrast: #08130d;
-		--accent-soft: #123526;
-		--accent-soft-text: #8ff0b7;
-		--border: #2a3d50;
-		--ui-border: #7f93a8;
+		--bg: #0b1220;
+		--surface: #121c2e;
+		--card: #121c2e;
+		--text: #e8edf7;
+		--muted: #a9b6cc;
+		--accent: #8fb0ff;
+		--accent-contrast: #08122b;
+		--accent-soft: #16264a;
+		--accent-soft-text: #b8ccff;
+		--border: #26344d;
+		--ui-border: #7d8fb0;
 		--focus: #ffd166;
-		--focus-halo: #0f1923;
+		--focus-halo: #0b1220;
 		--shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px rgba(0, 0, 0, 0.35);
-		--header-bg: rgba(15, 25, 35, 0.86);
-		--code-bg: #0b131b;
+		--header-bg: rgba(11, 18, 32, 0.86);
+		--logo: #ffffff;
+		--code-bg: #070c16;
 		--sev-critical: #ff8a80;
 		--sev-major: #ffb469;
 		--sev-minor: #f2d16b;
@@ -69,22 +74,23 @@
 
 :root[data-theme="dark"] {
 	color-scheme: dark;
-	--bg: #0f1923;
-	--surface: #162433;
-	--card: #162433;
-	--text: #e6edf3;
-	--muted: #a9b8c6;
-	--accent: #5fe39a;
-	--accent-contrast: #08130d;
-	--accent-soft: #123526;
-	--accent-soft-text: #8ff0b7;
-	--border: #2a3d50;
-	--ui-border: #7f93a8;
+	--bg: #0b1220;
+	--surface: #121c2e;
+	--card: #121c2e;
+	--text: #e8edf7;
+	--muted: #a9b6cc;
+	--accent: #8fb0ff;
+	--accent-contrast: #08122b;
+	--accent-soft: #16264a;
+	--accent-soft-text: #b8ccff;
+	--border: #26344d;
+	--ui-border: #7d8fb0;
 	--focus: #ffd166;
-	--focus-halo: #0f1923;
+	--focus-halo: #0b1220;
 	--shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px rgba(0, 0, 0, 0.35);
-	--header-bg: rgba(15, 25, 35, 0.86);
-	--code-bg: #0b131b;
+	--header-bg: rgba(11, 18, 32, 0.86);
+	--logo: #ffffff;
+	--code-bg: #070c16;
 	--sev-critical: #ff8a80;
 	--sev-major: #ffb469;
 	--sev-minor: #f2d16b;
@@ -382,14 +388,14 @@ p {
 }
 
 .button--primary {
-	background: var(--hero-accent);
+	background: var(--hero-button-bg);
 	color: var(--hero-button-text);
-	box-shadow: 0 8px 24px rgba(95, 227, 154, 0.28);
+	box-shadow: 0 10px 28px rgba(8, 18, 43, 0.35);
 }
 
 .button--primary:hover {
 	transform: translateY(-1px);
-	box-shadow: 0 12px 28px rgba(95, 227, 154, 0.38);
+	box-shadow: 0 14px 32px rgba(8, 18, 43, 0.45);
 }
 
 .button--ghost {
@@ -402,8 +408,8 @@ p {
 }
 
 .button__meta {
+	color: var(--hero-bg-2);
 	font-weight: 500;
-	opacity: 0.85;
 }
 
 /* Hero (always dark). */
@@ -412,7 +418,7 @@ p {
 	overflow: hidden;
 	padding: clamp(3rem, 2rem + 4vw, 6rem) 0 clamp(3.5rem, 2rem + 5vw, 7rem);
 	background:
-		radial-gradient(60rem 30rem at 85% -10%, rgba(46, 204, 113, 0.22), transparent 60%),
+		radial-gradient(60rem 30rem at 85% -10%, rgba(35, 86, 235, 0.22), transparent 60%),
 		radial-gradient(40rem 24rem at -10% 110%, rgba(124, 196, 255, 0.14), transparent 60%),
 		linear-gradient(160deg, var(--hero-bg) 0%, var(--hero-bg-2) 100%);
 	color: var(--hero-text);
@@ -421,7 +427,7 @@ p {
 .hero :focus-visible,
 .final-cta :focus-visible {
 	outline-color: #ffd166;
-	box-shadow: 0 0 0 6px #13202f;
+	box-shadow: 0 0 0 6px #0d1b4d;
 }
 
 .hero a:not(.button) {
@@ -439,10 +445,10 @@ p {
 	display: inline-block;
 	margin: 0 0 1rem;
 	padding: 0.3rem 0.85rem;
-	border: 1px solid rgba(95, 227, 154, 0.5);
+	border: 1px solid rgba(201, 216, 255, 0.5);
 	border-radius: 999px;
-	background: rgba(95, 227, 154, 0.08);
-	color: #8ff0b7;
+	background: rgba(201, 216, 255, 0.08);
+	color: #c9d8ff;
 	font-size: 0.85rem;
 	font-weight: 700;
 	letter-spacing: 0.04em;
@@ -493,7 +499,7 @@ p {
 
 .pills li {
 	padding: 0.3rem 0.8rem;
-	border: 1px solid rgba(201, 214, 227, 0.4);
+	border: 1px solid rgba(201, 216, 255, 0.4);
 	border-radius: 999px;
 	color: var(--hero-muted);
 	font-size: 0.9rem;
@@ -506,9 +512,9 @@ p {
 
 .window {
 	overflow: hidden;
-	border: 1px solid rgba(201, 214, 227, 0.25);
+	border: 1px solid rgba(201, 216, 255, 0.25);
 	border-radius: var(--radius);
-	background: #0b131b;
+	background: #070c16;
 	box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04);
 	transform: perspective(1600px) rotateY(-6deg) rotateX(2deg);
 }
@@ -517,7 +523,7 @@ p {
 	display: flex;
 	gap: 6px;
 	padding: 10px 12px;
-	background: #1b2a3a;
+	background: #16264a;
 }
 
 .window__bar span {
@@ -549,7 +555,7 @@ p {
 	padding: 0.9rem 1.2rem 0.9rem 0.9rem;
 	border: 1px solid rgba(255, 255, 255, 0.12);
 	border-radius: var(--radius);
-	background: rgba(19, 32, 47, 0.92);
+	background: rgba(13, 27, 77, 0.92);
 	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
 	color: #ffffff;
 }
@@ -571,7 +577,7 @@ p {
 }
 
 .score-card__label {
-	color: #8ff0b7;
+	color: #c9d8ff;
 	font-size: 0.9rem;
 	font-weight: 600;
 }
@@ -760,7 +766,7 @@ p {
 
 .gallery__link:hover {
 	transform: translateY(-3px);
-	box-shadow: 0 14px 34px rgba(19, 32, 47, 0.18);
+	box-shadow: 0 14px 34px rgba(13, 27, 77, 0.18);
 }
 
 .gallery__link img {
@@ -952,7 +958,7 @@ tbody tr:last-child td {
 	gap: 1rem;
 	padding: 0.5rem 0.75rem 0.5rem 1.25rem;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-	color: #c9d6e3;
+	color: #d3defa;
 	font-family: var(--mono);
 	font-size: 0.85rem;
 }
@@ -960,7 +966,7 @@ tbody tr:last-child td {
 .copy-button {
 	min-height: 36px;
 	padding: 0 0.9rem;
-	border: 1px solid #a9b8c6;
+	border: 1px solid #c9d8ff;
 	border-radius: 999px;
 	background: transparent;
 	color: #ffffff;
@@ -976,7 +982,7 @@ tbody tr:last-child td {
 
 .code :focus-visible {
 	outline-color: #ffd166;
-	box-shadow: 0 0 0 6px #13202f;
+	box-shadow: 0 0 0 6px #0d1b4d;
 }
 
 .code pre {
@@ -1100,7 +1106,7 @@ tbody tr:last-child td {
 .final-cta {
 	padding: clamp(3.5rem, 2.5rem + 3vw, 5.5rem) 0;
 	background:
-		radial-gradient(40rem 20rem at 50% 0%, rgba(46, 204, 113, 0.2), transparent 70%),
+		radial-gradient(40rem 20rem at 50% 0%, rgba(35, 86, 235, 0.2), transparent 70%),
 		linear-gradient(160deg, var(--hero-bg) 0%, var(--hero-bg-2) 100%);
 	color: var(--hero-text);
 	text-align: center;
@@ -1163,7 +1169,7 @@ tbody tr:last-child td {
 }
 
 .lightbox::backdrop {
-	background: rgba(8, 14, 20, 0.82);
+	background: rgba(7, 12, 22, 0.82);
 }
 
 .lightbox__figure {
@@ -1407,4 +1413,11 @@ tbody tr:last-child td {
 	display: block;
 	width: auto;
 	height: 22px;
+}
+
+/* 404 page: centred call to action filling the viewport. */
+.page-404 {
+	display: grid;
+	min-height: 100vh;
+	place-items: center;
 }

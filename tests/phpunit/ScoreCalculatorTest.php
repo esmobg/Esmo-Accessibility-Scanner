@@ -2,18 +2,18 @@
 /**
  * Tests for the score calculator.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Tests;
+namespace EsmoAccessibilityScanner\Tests;
 
-use AccessibilityGuardian\Scan\ScoreCalculator;
+use EsmoAccessibilityScanner\Scan\ScoreCalculator;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \AccessibilityGuardian\Scan\ScoreCalculator
+ * @covers \EsmoAccessibilityScanner\Scan\ScoreCalculator
  */
 final class ScoreCalculatorTest extends TestCase {
 

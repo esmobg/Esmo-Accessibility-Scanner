@@ -2,12 +2,12 @@
 /**
  * Database installation and lifecycle handling.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Activation;
+namespace EsmoAccessibilityScanner\Activation;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -19,19 +19,56 @@ final class Installer {
 	/**
 	 * Current schema version. Bump to trigger dbDelta migrations.
 	 */
-	private const DB_VERSION = '1.2.0';
+	private const DB_VERSION = '1.3.0';
 
 	/**
 	 * Option key that stores the installed schema version.
 	 */
-	private const DB_VERSION_OPTION = 'accg_db_version';
+	private const DB_VERSION_OPTION = 'esmoas_db_version';
 
 	/**
 	 * Table name suffixes (appended to the site's table prefix).
 	 *
 	 * @var array<int, string>
 	 */
-	public const TABLES = array( 'accg_scans', 'accg_issues', 'accg_history' );
+	public const TABLES = array( 'esmoas_scans', 'esmoas_issues', 'esmoas_history', 'esmoas_scan_pages' );
+
+	/**
+	 * Table/option prefix used up to 1.2.0, when the plugin was called "Accessibility Guardian".
+	 */
+	public const LEGACY_PREFIX = 'accg_';
+
+	/**
+	 * Plugin file of 1.2.0 and earlier.
+	 */
+	public const LEGACY_PLUGIN = 'accessibility-guardian/accessibility-guardian.php';
+
+	/**
+	 * Progress of the import from 1.2.0: "settings" once the settings are copied,
+	 * "done" once every table is copied.
+	 */
+	public const IMPORT_OPTION = 'esmoas_legacy_import';
+
+	/**
+	 * Transient that delays the next attempt after a failed import.
+	 */
+	public const IMPORT_RETRY_TRANSIENT = 'esmoas_legacy_import_retry';
+
+	/**
+	 * Tables ("scans", "issues", "history") whose 1.2.0 rows are fully copied.
+	 */
+	public const IMPORT_TABLES_OPTION = 'esmoas_legacy_import_tables';
+
+	/**
+	 * Columns of the 1.2.0 tables, copied as they are into the new tables.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	private const LEGACY_COLUMNS = array(
+		'scans'   => array( 'id', 'scan_type', 'status', 'started_at', 'finished_at', 'total_urls', 'scanned_urls', 'score', 'errors', 'warnings', 'passes' ),
+		'issues'  => array( 'id', 'scan_id', 'url', 'post_id', 'rule_id', 'wcag_ref', 'severity', 'category', 'impact', 'message', 'html_snippet', 'dom_path', 'fix_suggestion', 'doc_link', 'status', 'created_at' ),
+		'history' => array( 'id', 'scan_id', 'score', 'errors', 'warnings', 'passes', 'created_at' ),
+	);
 
 	/**
 	 * Run on plugin activation.
@@ -39,7 +76,27 @@ final class Installer {
 	 * @param bool $network_wide Whether the plugin is being network-activated.
 	 */
 	public static function activate( $network_wide = false ): void {
-		if ( is_multisite() && $network_wide ) {
+		$network_wide = is_multisite() && $network_wide;
+
+		// Next to a network-active Accessibility Guardian, its screens would keep writing
+		// scans that are never imported. Network activation imports every site and switches it off.
+		if ( is_multisite() && ! $network_wide ) {
+			if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+
+			if ( is_plugin_active_for_network( self::LEGACY_PLUGIN ) ) {
+				wp_die(
+					esc_html__( 'Accessibility Guardian, the previous version of this plugin, is active on the whole network. Network-activate Esmo Accessibility Scanner instead: it imports the data of every site and deactivates Accessibility Guardian.', 'esmo-accessibility-scanner' ),
+					esc_html__( 'Plugin not activated', 'esmo-accessibility-scanner' ),
+					array( 'back_link' => true )
+				);
+			}
+		}
+
+		self::deactivate_legacy_plugin( $network_wide );
+
+		if ( $network_wide ) {
 			$site_ids = get_sites(
 				array(
 					'fields' => 'ids',
@@ -49,6 +106,7 @@ final class Installer {
 
 			foreach ( $site_ids as $site_id ) {
 				switch_to_blog( (int) $site_id );
+				self::deactivate_legacy_plugin( false );
 				self::install_site();
 				restore_current_blog();
 			}
@@ -70,11 +128,63 @@ final class Installer {
 	 * Ensure the schema and default settings exist. Cheap when up to date.
 	 */
 	public static function maybe_upgrade(): void {
-		if ( get_option( self::DB_VERSION_OPTION ) === self::DB_VERSION ) {
+		if ( get_option( self::DB_VERSION_OPTION ) !== self::DB_VERSION ) {
+			self::install_site();
 			return;
 		}
 
-		self::install_site();
+		// An import that failed (for example a database timeout) is retried, at most once an hour.
+		if ( self::legacy_import_pending() && false === get_transient( self::IMPORT_RETRY_TRANSIENT ) ) {
+			self::import_legacy_data();
+		}
+	}
+
+	/**
+	 * Whether this site still has data from 1.2.0 that has not been fully imported.
+	 */
+	public static function legacy_import_pending(): bool {
+		return false !== get_option( self::LEGACY_PREFIX . 'db_version', false ) && 'done' !== get_option( self::IMPORT_OPTION, '' );
+	}
+
+	/**
+	 * Whether any site still has data from 1.2.0 that has not been fully imported.
+	 *
+	 * Deleting Accessibility Guardian removes the data of every site of a network,
+	 * so every site is checked, including sites where this plugin is not active yet.
+	 */
+	public static function legacy_import_pending_anywhere(): bool {
+		global $wpdb;
+
+		if ( ! is_multisite() ) {
+			return self::legacy_import_pending();
+		}
+
+		$legacy = self::LEGACY_PREFIX . 'db_version';
+
+		foreach ( get_sites(
+			array(
+				'fields' => 'ids',
+				'number' => 0,
+			)
+		) as $site_id ) {
+			// One query per site instead of switch_to_blog(), which loads every site's options.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$values = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT option_name, option_value FROM %i WHERE option_name IN ( %s, %s )',
+					$wpdb->get_blog_prefix( (int) $site_id ) . 'options',
+					$legacy,
+					self::IMPORT_OPTION
+				),
+				OBJECT_K
+			);
+
+			if ( isset( $values[ $legacy ] ) && 'done' !== ( $values[ self::IMPORT_OPTION ]->option_value ?? '' ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -91,7 +201,7 @@ final class Installer {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
-		if ( ! is_plugin_active_for_network( plugin_basename( ACCG_PLUGIN_FILE ) ) ) {
+		if ( ! is_plugin_active_for_network( plugin_basename( ESMOAS_PLUGIN_FILE ) ) ) {
 			return;
 		}
 
@@ -127,7 +237,123 @@ final class Installer {
 	 */
 	private static function install_site(): void {
 		self::install_tables();
+
+		if ( self::legacy_import_pending() ) {
+			self::import_legacy_data();
+		}
+
 		self::seed_default_settings();
+	}
+
+	/**
+	 * Copy data from version 1.2.0 and earlier (plugin "Accessibility Guardian", prefix accg_).
+	 *
+	 * Runs per site, right after the new tables are created, until it succeeds
+	 * (IMPORT_OPTION). The settings are copied once; rows are copied with plain
+	 * INSERT ... SELECT (portable to every database WordPress supports), and a
+	 * table counts as done only once its copy succeeded (IMPORT_TABLES_OPTION),
+	 * so a retry copies whatever is still missing. Custom rule ids move from
+	 * "ag-" to "esmoas-". New scans wait until the import is done (see
+	 * ScanController), so imported and new rows never share ids. The old
+	 * tables and options are left alone: deleting the old plugin removes them,
+	 * and until then it can still be reactivated.
+	 */
+	public static function import_legacy_data(): void {
+		global $wpdb;
+
+		$first_attempt = false === get_option( self::IMPORT_OPTION, false );
+		if ( $first_attempt ) {
+			$settings = get_option( self::LEGACY_PREFIX . 'settings', false );
+			if ( is_array( $settings ) ) {
+				update_option( 'esmoas_settings', $settings );
+			}
+			update_option( self::IMPORT_OPTION, 'settings' );
+		}
+
+		$done     = array_values( array_filter( (array) get_option( self::IMPORT_TABLES_OPTION, array() ), 'is_string' ) );
+		$complete = true;
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		foreach ( self::LEGACY_COLUMNS as $name => $columns ) {
+			if ( in_array( $name, $done, true ) ) {
+				continue;
+			}
+
+			$old = $wpdb->prefix . self::LEGACY_PREFIX . $name;
+			$new = $wpdb->prefix . 'esmoas_' . $name;
+
+			$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $old ) ) );
+
+			// A failed lookup is not proof that the table is gone; retry it later.
+			if ( '' !== $wpdb->last_error ) {
+				$complete = false;
+				continue;
+			}
+
+			if ( $old !== $found ) {
+				$done[] = $name;
+				continue;
+			}
+
+			// Data the new table held before the first attempt is never mixed with the old rows.
+			if ( $first_attempt && 0 < (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $new ) ) ) {
+				$done[] = $name;
+				continue;
+			}
+
+			// Rows that an earlier, interrupted attempt already copied are skipped by id.
+			$list   = implode( ', ', $columns );
+			$copied = $wpdb->query( $wpdb->prepare( "INSERT INTO %i ( {$list} ) SELECT {$list} FROM %i WHERE id NOT IN ( SELECT id FROM %i )", $new, $old, $new ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- $list is a fixed column list from LEGACY_COLUMNS.
+			if ( false === $copied ) {
+				$complete = false;
+			} else {
+				$done[] = $name;
+			}
+		}
+
+		update_option( self::IMPORT_TABLES_OPTION, $done );
+
+		// Supplemental rule ids were prefixed "ag-" before 1.3.0.
+		$renamed = $wpdb->query(
+			$wpdb->prepare(
+				'UPDATE %i SET rule_id = CONCAT( %s, SUBSTRING( rule_id, 4 ) ) WHERE rule_id LIKE %s',
+				$wpdb->prefix . 'esmoas_issues',
+				'esmoas-',
+				$wpdb->esc_like( 'ag-' ) . '%'
+			)
+		);
+		// phpcs:enable
+
+		if ( $complete && false !== $renamed ) {
+			update_option( self::IMPORT_OPTION, 'done' );
+			delete_transient( self::IMPORT_RETRY_TRANSIENT );
+		} else {
+			set_transient( self::IMPORT_RETRY_TRANSIENT, 1, HOUR_IN_SECONDS );
+		}
+	}
+
+	/**
+	 * Deactivate "Accessibility Guardian" (1.2.0 and earlier). It is this plugin
+	 * under its old name; running both would apply the automatic fixes twice.
+	 *
+	 * @param bool $network_wide Whether this plugin is being network-activated.
+	 */
+	private static function deactivate_legacy_plugin( bool $network_wide ): void {
+		if ( ! function_exists( 'is_plugin_active' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		if ( is_multisite() && is_plugin_active_for_network( self::LEGACY_PLUGIN ) ) {
+			// Only a network activation may switch off a network-wide plugin.
+			if ( $network_wide ) {
+				deactivate_plugins( self::LEGACY_PLUGIN, true, true );
+			}
+			return;
+		}
+
+		if ( is_plugin_active( self::LEGACY_PLUGIN ) ) {
+			deactivate_plugins( self::LEGACY_PLUGIN, true, false );
+		}
 	}
 
 	/**
@@ -139,9 +365,10 @@ final class Installer {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 		$charset_collate = $wpdb->get_charset_collate();
-		$scans           = $wpdb->prefix . 'accg_scans';
-		$issues          = $wpdb->prefix . 'accg_issues';
-		$history         = $wpdb->prefix . 'accg_history';
+		$scans           = $wpdb->prefix . 'esmoas_scans';
+		$issues          = $wpdb->prefix . 'esmoas_issues';
+		$history         = $wpdb->prefix . 'esmoas_history';
+		$pages           = $wpdb->prefix . 'esmoas_scan_pages';
 
 		$schema = array();
 
@@ -151,6 +378,7 @@ final class Installer {
 			status VARCHAR(20) NOT NULL DEFAULT 'running',
 			started_at DATETIME NULL DEFAULT NULL,
 			finished_at DATETIME NULL DEFAULT NULL,
+			updated_at DATETIME NULL DEFAULT NULL,
 			total_urls INT(11) NOT NULL DEFAULT 0,
 			scanned_urls INT(11) NOT NULL DEFAULT 0,
 			score TINYINT(3) UNSIGNED NOT NULL DEFAULT 0,
@@ -198,6 +426,15 @@ final class Installer {
 			KEY created_at (created_at)
 		) {$charset_collate};";
 
+		// Pages queued by running scans; each can be saved once. Rows are removed when a scan ends.
+		$schema[] = "CREATE TABLE {$pages} (
+			scan_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
+			url_hash CHAR(32) NOT NULL DEFAULT '',
+			post_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
+			saved TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
+			PRIMARY KEY  (scan_id,url_hash)
+		) {$charset_collate};";
+
 		foreach ( $schema as $statement ) {
 			dbDelta( $statement );
 		}
@@ -209,8 +446,8 @@ final class Installer {
 	 * Store default settings if none exist yet.
 	 */
 	private static function seed_default_settings(): void {
-		if ( false === get_option( 'accg_settings' ) ) {
-			add_option( 'accg_settings', self::default_settings() );
+		if ( false === get_option( 'esmoas_settings' ) ) {
+			add_option( 'esmoas_settings', self::default_settings() );
 		}
 	}
 

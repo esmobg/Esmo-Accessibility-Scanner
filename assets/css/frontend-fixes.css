@@ -1,14 +1,14 @@
-/* Accessibility Guardian - front-end automatic fixes. */
+/* Esmo Accessibility Scanner - front-end automatic fixes. */
 
 /* Skip link (classic themes only; visible on focus). */
-.accg-skip-link {
+.esmoas-skip-link {
 	position: absolute;
 	left: -9999px;
 	top: 0;
 	z-index: 100000;
 }
 
-.accg-skip-link:focus {
+.esmoas-skip-link:focus {
 	left: 8px;
 	top: 8px;
 	width: auto;
@@ -25,27 +25,27 @@
 }
 
 /* Visible focus indicator for keyboard users (does not affect mouse clicks). */
-.accg-fix-focus-outline a:focus-visible,
-.accg-fix-focus-outline button:focus-visible,
-.accg-fix-focus-outline input:focus-visible,
-.accg-fix-focus-outline select:focus-visible,
-.accg-fix-focus-outline textarea:focus-visible,
-.accg-fix-focus-outline summary:focus-visible,
-.accg-fix-focus-outline [tabindex]:focus-visible {
+.esmoas-fix-focus-outline a:focus-visible,
+.esmoas-fix-focus-outline button:focus-visible,
+.esmoas-fix-focus-outline input:focus-visible,
+.esmoas-fix-focus-outline select:focus-visible,
+.esmoas-fix-focus-outline textarea:focus-visible,
+.esmoas-fix-focus-outline summary:focus-visible,
+.esmoas-fix-focus-outline [tabindex]:focus-visible {
 	outline: 3px solid #2271b1 !important;
 	outline-offset: 2px !important;
 }
 
 /* Underline links inside content, but not buttons or navigation menus. */
-.accg-fix-underline-links .entry-content a:not(.wp-element-button):not(.wp-block-button__link),
-.accg-fix-underline-links .wp-block-post-content a:not(.wp-element-button):not(.wp-block-button__link),
-.accg-fix-underline-links main p a,
-.accg-fix-underline-links main li:not(nav li) > a {
+.esmoas-fix-underline-links .entry-content a:not(.wp-element-button):not(.wp-block-button__link),
+.esmoas-fix-underline-links .wp-block-post-content a:not(.wp-element-button):not(.wp-block-button__link),
+.esmoas-fix-underline-links main p a,
+.esmoas-fix-underline-links main li:not(nav li) > a {
 	text-decoration: underline;
 }
 
 /* Screen-reader-only helper, in case the theme lacks one. */
-.accg-new-window-note {
+.esmoas-new-window-note {
 	position: absolute !important;
 	width: 1px;
 	height: 1px;

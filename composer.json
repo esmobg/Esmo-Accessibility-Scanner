@@ -1,5 +1,5 @@
 {
-    "name": "accessibility-guardian/accessibility-guardian",
+    "name": "esmo-accessibility-scanner/esmo-accessibility-scanner",
     "description": "Automated WCAG 2.2 AA accessibility auditor for WordPress.",
     "type": "wordpress-plugin",
     "license": "GPL-2.0-or-later",
@@ -11,12 +11,12 @@
     },
     "autoload": {
         "psr-4": {
-            "AccessibilityGuardian\\": "src/"
+            "EsmoAccessibilityScanner\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "AccessibilityGuardian\\Tests\\": "tests/phpunit/"
+            "EsmoAccessibilityScanner\\Tests\\": "tests/phpunit/"
         }
     },
     "scripts": {

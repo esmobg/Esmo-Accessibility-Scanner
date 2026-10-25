@@ -2,18 +2,18 @@
 /**
  * Tests for the WCAG rule catalog.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Tests;
+namespace EsmoAccessibilityScanner\Tests;
 
-use AccessibilityGuardian\Rules\RuleCatalog;
+use EsmoAccessibilityScanner\Rules\RuleCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @covers \AccessibilityGuardian\Rules\RuleCatalog
+ * @covers \EsmoAccessibilityScanner\Rules\RuleCatalog
  */
 final class RuleCatalogTest extends TestCase {
 

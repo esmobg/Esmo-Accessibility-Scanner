@@ -2,201 +2,201 @@
 /**
  * Dashboard page template.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  *
  * @var array<string,mixed> $args Template context.
  *
- * @var array<string,mixed>|null                         $accg_latest
- * @var array<int,array<string,mixed>>                   $accg_recent
- * @var array<int,array<string,mixed>>                   $accg_history
- * @var array<string,int>                                $accg_severity_counts
- * @var array<string,int>                                $accg_category_counts
- * @var array<int,array<string,mixed>>                   $accg_top_rules
- * @var array{label:string,key:string}                   $accg_band
- * @var string                                           $accg_scan_url
+ * @var array<string,mixed>|null                         $esmoas_latest
+ * @var array<int,array<string,mixed>>                   $esmoas_recent
+ * @var array<int,array<string,mixed>>                   $esmoas_history
+ * @var array<string,int>                                $esmoas_severity_counts
+ * @var array<string,int>                                $esmoas_category_counts
+ * @var array<int,array<string,mixed>>                   $esmoas_top_rules
+ * @var array{label:string,key:string}                   $esmoas_band
+ * @var string                                           $esmoas_scan_url
  */
 
 defined( 'ABSPATH' ) || exit;
 
 // Template context passed by AdminMenu::render() via load_template().
-$accg_latest          = $args['latest'] ?? null;
-$accg_recent          = $args['recent'] ?? array();
-$accg_history         = $args['history'] ?? array();
-$accg_severity_counts = $args['severity_counts'] ?? array();
-$accg_category_counts = $args['category_counts'] ?? array();
-$accg_top_rules       = $args['top_rules'] ?? array();
-$accg_band            = $args['band'] ?? array( 'label' => '', 'key' => 'poor' );
-$accg_scan_url        = $args['scan_url'] ?? '';
+$esmoas_latest          = $args['latest'] ?? null;
+$esmoas_recent          = $args['recent'] ?? array();
+$esmoas_history         = $args['history'] ?? array();
+$esmoas_severity_counts = $args['severity_counts'] ?? array();
+$esmoas_category_counts = $args['category_counts'] ?? array();
+$esmoas_top_rules       = $args['top_rules'] ?? array();
+$esmoas_band            = $args['band'] ?? array( 'label' => '', 'key' => 'poor' );
+$esmoas_scan_url        = $args['scan_url'] ?? '';
 
-$accg_score    = null !== $accg_latest ? (int) $accg_latest['score'] : 0;
-$accg_errors   = null !== $accg_latest ? (int) $accg_latest['errors'] : 0;
-$accg_warnings = null !== $accg_latest ? (int) $accg_latest['warnings'] : 0;
-$accg_passes   = null !== $accg_latest ? (int) $accg_latest['passes'] : 0;
-$accg_total    = null !== $accg_latest ? (int) $accg_latest['total_urls'] : 0;
+$esmoas_score    = null !== $esmoas_latest ? (int) $esmoas_latest['score'] : 0;
+$esmoas_errors   = null !== $esmoas_latest ? (int) $esmoas_latest['errors'] : 0;
+$esmoas_warnings = null !== $esmoas_latest ? (int) $esmoas_latest['warnings'] : 0;
+$esmoas_passes   = null !== $esmoas_latest ? (int) $esmoas_latest['passes'] : 0;
+$esmoas_total    = null !== $esmoas_latest ? (int) $esmoas_latest['total_urls'] : 0;
 
-$accg_severity_total = array_sum( $accg_severity_counts );
-$accg_status_labels  = array(
-	'running'   => __( 'Running', 'accessibility-guardian' ),
-	'complete'  => __( 'Complete', 'accessibility-guardian' ),
-	'cancelled' => __( 'Cancelled', 'accessibility-guardian' ),
-	'failed'    => __( 'Failed', 'accessibility-guardian' ),
+$esmoas_severity_total = array_sum( $esmoas_severity_counts );
+$esmoas_status_labels  = array(
+	'running'   => __( 'Running', 'esmo-accessibility-scanner' ),
+	'complete'  => __( 'Complete', 'esmo-accessibility-scanner' ),
+	'cancelled' => __( 'Cancelled', 'esmo-accessibility-scanner' ),
+	'failed'    => __( 'Failed', 'esmo-accessibility-scanner' ),
 );
-$accg_history_json   = wp_json_encode(
+$esmoas_history_json   = wp_json_encode(
 	array_map(
 		static fn ( array $row ): array => array(
 			'score' => (int) $row['score'],
 			'date'  => $row['created_at'],
 		),
-		$accg_history
+		$esmoas_history
 	)
 );
 
-$accg_export_base = wp_nonce_url(
-	admin_url( 'admin-post.php?action=accg_export&scan_id=' . ( null !== $accg_latest ? (int) $accg_latest['id'] : 0 ) ),
-	'accg_export'
+$esmoas_export_base = wp_nonce_url(
+	admin_url( 'admin-post.php?action=esmoas_export&scan_id=' . ( null !== $esmoas_latest ? (int) $esmoas_latest['id'] : 0 ) ),
+	'esmoas_export'
 );
 ?>
-<div class="wrap ag-wrap">
-	<h1 class="ag-title">
+<div class="wrap esmoas-wrap">
+	<h1 class="esmoas-title">
 		<span class="dashicons dashicons-universal-access-alt" aria-hidden="true"></span>
-		<?php esc_html_e( 'Accessibility Guardian', 'accessibility-guardian' ); ?>
+		<?php esc_html_e( 'Esmo Accessibility Scanner', 'esmo-accessibility-scanner' ); ?>
 	</h1>
 	<hr class="wp-header-end">
 
-	<?php if ( null === $accg_latest ) : ?>
-		<div class="ag-empty">
-			<p><?php esc_html_e( 'No scans yet. Run your first accessibility scan to see results here.', 'accessibility-guardian' ); ?></p>
-			<a class="button button-primary button-hero" href="<?php echo esc_url( $accg_scan_url ); ?>">
-				<?php esc_html_e( 'Run your first scan', 'accessibility-guardian' ); ?>
+	<?php if ( null === $esmoas_latest ) : ?>
+		<div class="esmoas-empty">
+			<p><?php esc_html_e( 'No scans yet. Run your first accessibility scan to see results here.', 'esmo-accessibility-scanner' ); ?></p>
+			<a class="button button-primary button-hero" href="<?php echo esc_url( $esmoas_scan_url ); ?>">
+				<?php esc_html_e( 'Run your first scan', 'esmo-accessibility-scanner' ); ?>
 			</a>
 		</div>
 	<?php else : ?>
-		<div class="ag-actions">
-			<a class="button button-primary" href="<?php echo esc_url( $accg_scan_url ); ?>">
-				<?php esc_html_e( 'Run new scan', 'accessibility-guardian' ); ?>
+		<div class="esmoas-actions">
+			<a class="button button-primary" href="<?php echo esc_url( $esmoas_scan_url ); ?>">
+				<?php esc_html_e( 'Run new scan', 'esmo-accessibility-scanner' ); ?>
 			</a>
-			<span class="ag-actions__export">
-				<?php esc_html_e( 'Export:', 'accessibility-guardian' ); ?>
-				<a class="button" href="<?php echo esc_url( $accg_export_base . '&format=csv' ); ?>">CSV</a>
-				<a class="button" href="<?php echo esc_url( $accg_export_base . '&format=json' ); ?>">JSON</a>
+			<span class="esmoas-actions__export">
+				<?php esc_html_e( 'Export:', 'esmo-accessibility-scanner' ); ?>
+				<a class="button" href="<?php echo esc_url( $esmoas_export_base . '&format=csv' ); ?>">CSV</a>
+				<a class="button" href="<?php echo esc_url( $esmoas_export_base . '&format=json' ); ?>">JSON</a>
 			</span>
 		</div>
 
-		<div class="ag-cards">
-			<div class="ag-card ag-card--score ag-score--<?php echo esc_attr( $accg_band['key'] ); ?>">
-				<div class="ag-score__circle" role="img"
-					aria-label="<?php echo esc_attr( sprintf( /* translators: %d: score. */ __( 'Accessibility score %d out of 100', 'accessibility-guardian' ), $accg_score ) ); ?>"
-					style="--ag-score: <?php echo esc_attr( (string) $accg_score ); ?>">
-					<span class="ag-score__value"><?php echo esc_html( (string) $accg_score ); ?></span>
-					<span class="ag-score__max">/100</span>
+		<div class="esmoas-cards">
+			<div class="esmoas-card esmoas-card--score esmoas-score--<?php echo esc_attr( $esmoas_band['key'] ); ?>">
+				<div class="esmoas-score__circle" role="img"
+					aria-label="<?php echo esc_attr( sprintf( /* translators: %d: score. */ __( 'Accessibility score %d out of 100', 'esmo-accessibility-scanner' ), $esmoas_score ) ); ?>"
+					style="--esmoas-score: <?php echo esc_attr( (string) $esmoas_score ); ?>">
+					<span class="esmoas-score__value"><?php echo esc_html( (string) $esmoas_score ); ?></span>
+					<span class="esmoas-score__max">/100</span>
 				</div>
-				<p class="ag-score__band"><?php echo esc_html( $accg_band['label'] ); ?></p>
-				<?php if ( $accg_total > 1 ) : ?>
-					<p class="ag-score__note ag-muted"><?php esc_html_e( 'Site score is the average across scanned pages.', 'accessibility-guardian' ); ?></p>
+				<p class="esmoas-score__band"><?php echo esc_html( $esmoas_band['label'] ); ?></p>
+				<?php if ( $esmoas_total > 1 ) : ?>
+					<p class="esmoas-score__note esmoas-muted"><?php esc_html_e( 'Site score is the average across scanned pages.', 'esmo-accessibility-scanner' ); ?></p>
 				<?php endif; ?>
 			</div>
 
-			<div class="ag-card">
-				<span class="ag-card__label"><?php esc_html_e( 'Pages scanned', 'accessibility-guardian' ); ?></span>
-				<span class="ag-card__value"><?php echo esc_html( (string) $accg_total ); ?></span>
+			<div class="esmoas-card">
+				<span class="esmoas-card__label"><?php esc_html_e( 'Pages scanned', 'esmo-accessibility-scanner' ); ?></span>
+				<span class="esmoas-card__value"><?php echo esc_html( (string) $esmoas_total ); ?></span>
 			</div>
-			<div class="ag-card ag-card--error">
-				<span class="ag-card__label"><?php esc_html_e( 'Errors', 'accessibility-guardian' ); ?></span>
-				<span class="ag-card__value"><?php echo esc_html( (string) $accg_errors ); ?></span>
+			<div class="esmoas-card esmoas-card--error">
+				<span class="esmoas-card__label"><?php esc_html_e( 'Errors', 'esmo-accessibility-scanner' ); ?></span>
+				<span class="esmoas-card__value"><?php echo esc_html( (string) $esmoas_errors ); ?></span>
 			</div>
-			<div class="ag-card ag-card--warning">
-				<span class="ag-card__label"><?php esc_html_e( 'Warnings', 'accessibility-guardian' ); ?></span>
-				<span class="ag-card__value"><?php echo esc_html( (string) $accg_warnings ); ?></span>
+			<div class="esmoas-card esmoas-card--warning">
+				<span class="esmoas-card__label"><?php esc_html_e( 'Warnings', 'esmo-accessibility-scanner' ); ?></span>
+				<span class="esmoas-card__value"><?php echo esc_html( (string) $esmoas_warnings ); ?></span>
 			</div>
-			<div class="ag-card ag-card--pass">
-				<span class="ag-card__label"><?php esc_html_e( 'Passed checks', 'accessibility-guardian' ); ?></span>
-				<span class="ag-card__value"><?php echo esc_html( (string) $accg_passes ); ?></span>
+			<div class="esmoas-card esmoas-card--pass">
+				<span class="esmoas-card__label"><?php esc_html_e( 'Passed checks', 'esmo-accessibility-scanner' ); ?></span>
+				<span class="esmoas-card__value"><?php echo esc_html( (string) $esmoas_passes ); ?></span>
 			</div>
 		</div>
 
-		<div class="ag-grid">
-			<section class="ag-panel" aria-labelledby="ag-severity-heading">
-				<h2 id="ag-severity-heading"><?php esc_html_e( 'Issues by severity', 'accessibility-guardian' ); ?></h2>
-				<ul class="ag-bars">
+		<div class="esmoas-grid">
+			<section class="esmoas-panel" aria-labelledby="esmoas-severity-heading">
+				<h2 id="esmoas-severity-heading"><?php esc_html_e( 'Issues by severity', 'esmo-accessibility-scanner' ); ?></h2>
+				<ul class="esmoas-bars">
 					<?php
-					$accg_severity_labels = array(
-						'critical' => __( 'Critical', 'accessibility-guardian' ),
-						'major'    => __( 'Major', 'accessibility-guardian' ),
-						'minor'    => __( 'Minor', 'accessibility-guardian' ),
-						'warning'  => __( 'Warning', 'accessibility-guardian' ),
+					$esmoas_severity_labels = array(
+						'critical' => __( 'Critical', 'esmo-accessibility-scanner' ),
+						'major'    => __( 'Major', 'esmo-accessibility-scanner' ),
+						'minor'    => __( 'Minor', 'esmo-accessibility-scanner' ),
+						'warning'  => __( 'Warning', 'esmo-accessibility-scanner' ),
 					);
-					foreach ( $accg_severity_labels as $accg_key => $accg_label ) :
-						$accg_value      = (int) ( $accg_severity_counts[ $accg_key ] ?? 0 );
-						$accg_percent    = $accg_severity_total > 0 ? round( ( $accg_value / $accg_severity_total ) * 100 ) : 0;
-						$accg_issues_url = admin_url( 'admin.php?page=accessibility-guardian-issues&severity=' . $accg_key );
+					foreach ( $esmoas_severity_labels as $esmoas_key => $esmoas_label ) :
+						$esmoas_value      = (int) ( $esmoas_severity_counts[ $esmoas_key ] ?? 0 );
+						$esmoas_percent    = $esmoas_severity_total > 0 ? round( ( $esmoas_value / $esmoas_severity_total ) * 100 ) : 0;
+						$esmoas_issues_url = admin_url( 'admin.php?page=esmo-accessibility-scanner-issues&severity=' . $esmoas_key );
 						?>
-						<li class="ag-bars__row">
-							<a class="ag-bars__link" href="<?php echo esc_url( $accg_issues_url ); ?>"
-								aria-label="<?php echo esc_attr( sprintf( /* translators: 1: count, 2: severity label. */ __( 'View %1$d %2$s issues', 'accessibility-guardian' ), $accg_value, $accg_label ) ); ?>">
-								<span class="ag-bars__label"><?php echo esc_html( $accg_label ); ?></span>
-								<span class="ag-bars__track">
-									<span class="ag-bars__fill ag-bars__fill--<?php echo esc_attr( $accg_key ); ?>"
-										style="width: <?php echo esc_attr( (string) $accg_percent ); ?>%;"></span>
+						<li class="esmoas-bars__row">
+							<a class="esmoas-bars__link" href="<?php echo esc_url( $esmoas_issues_url ); ?>"
+								aria-label="<?php echo esc_attr( sprintf( /* translators: 1: count, 2: severity label. */ __( 'View %1$d %2$s issues', 'esmo-accessibility-scanner' ), $esmoas_value, $esmoas_label ) ); ?>">
+								<span class="esmoas-bars__label"><?php echo esc_html( $esmoas_label ); ?></span>
+								<span class="esmoas-bars__track">
+									<span class="esmoas-bars__fill esmoas-bars__fill--<?php echo esc_attr( $esmoas_key ); ?>"
+										style="width: <?php echo esc_attr( (string) $esmoas_percent ); ?>%;"></span>
 								</span>
-								<span class="ag-bars__value"><?php echo esc_html( (string) $accg_value ); ?></span>
+								<span class="esmoas-bars__value"><?php echo esc_html( (string) $esmoas_value ); ?></span>
 							</a>
 						</li>
 					<?php endforeach; ?>
 				</ul>
 			</section>
 
-			<section class="ag-panel" aria-labelledby="ag-category-heading">
-				<h2 id="ag-category-heading"><?php esc_html_e( 'WCAG category distribution', 'accessibility-guardian' ); ?></h2>
-				<?php if ( empty( $accg_category_counts ) ) : ?>
-					<p class="ag-muted"><?php esc_html_e( 'No issues recorded.', 'accessibility-guardian' ); ?></p>
+			<section class="esmoas-panel" aria-labelledby="esmoas-category-heading">
+				<h2 id="esmoas-category-heading"><?php esc_html_e( 'WCAG category distribution', 'esmo-accessibility-scanner' ); ?></h2>
+				<?php if ( empty( $esmoas_category_counts ) ) : ?>
+					<p class="esmoas-muted"><?php esc_html_e( 'No issues recorded.', 'esmo-accessibility-scanner' ); ?></p>
 				<?php else : ?>
-					<ul class="ag-bars">
+					<ul class="esmoas-bars">
 						<?php
-						$accg_cat_max = max( $accg_category_counts );
-						foreach ( $accg_category_counts as $accg_cat => $accg_cat_value ) :
-							$accg_cat_percent = $accg_cat_max > 0 ? round( ( $accg_cat_value / $accg_cat_max ) * 100 ) : 0;
+						$esmoas_cat_max = max( $esmoas_category_counts );
+						foreach ( $esmoas_category_counts as $esmoas_cat => $esmoas_cat_value ) :
+							$esmoas_cat_percent = $esmoas_cat_max > 0 ? round( ( $esmoas_cat_value / $esmoas_cat_max ) * 100 ) : 0;
 							?>
-							<li class="ag-bars__row">
-								<span class="ag-bars__label"><?php echo esc_html( ucfirst( (string) $accg_cat ) ); ?></span>
-								<span class="ag-bars__track">
-									<span class="ag-bars__fill ag-bars__fill--category"
-										style="width: <?php echo esc_attr( (string) $accg_cat_percent ); ?>%;"></span>
+							<li class="esmoas-bars__row">
+								<span class="esmoas-bars__label"><?php echo esc_html( ucfirst( (string) $esmoas_cat ) ); ?></span>
+								<span class="esmoas-bars__track">
+									<span class="esmoas-bars__fill esmoas-bars__fill--category"
+										style="width: <?php echo esc_attr( (string) $esmoas_cat_percent ); ?>%;"></span>
 								</span>
-								<span class="ag-bars__value"><?php echo esc_html( (string) $accg_cat_value ); ?></span>
+								<span class="esmoas-bars__value"><?php echo esc_html( (string) $esmoas_cat_value ); ?></span>
 							</li>
 						<?php endforeach; ?>
 					</ul>
 				<?php endif; ?>
 			</section>
 
-			<section class="ag-panel" aria-labelledby="ag-trend-heading">
-				<h2 id="ag-trend-heading"><?php esc_html_e( 'Progress over time', 'accessibility-guardian' ); ?></h2>
-				<div id="ag-trend" class="ag-trend"
-					data-history="<?php echo esc_attr( (string) $accg_history_json ); ?>"
-					data-empty="<?php echo esc_attr__( 'No history yet.', 'accessibility-guardian' ); ?>"></div>
+			<section class="esmoas-panel" aria-labelledby="esmoas-trend-heading">
+				<h2 id="esmoas-trend-heading"><?php esc_html_e( 'Progress over time', 'esmo-accessibility-scanner' ); ?></h2>
+				<div id="esmoas-trend" class="esmoas-trend"
+					data-history="<?php echo esc_attr( (string) $esmoas_history_json ); ?>"
+					data-empty="<?php echo esc_attr__( 'No history yet.', 'esmo-accessibility-scanner' ); ?>"></div>
 			</section>
 
-			<section class="ag-panel" aria-labelledby="ag-top-heading">
-				<h2 id="ag-top-heading"><?php esc_html_e( 'Most common problems', 'accessibility-guardian' ); ?></h2>
-				<?php if ( empty( $accg_top_rules ) ) : ?>
-					<p class="ag-muted"><?php esc_html_e( 'No issues recorded.', 'accessibility-guardian' ); ?></p>
+			<section class="esmoas-panel" aria-labelledby="esmoas-top-heading">
+				<h2 id="esmoas-top-heading"><?php esc_html_e( 'Most common problems', 'esmo-accessibility-scanner' ); ?></h2>
+				<?php if ( empty( $esmoas_top_rules ) ) : ?>
+					<p class="esmoas-muted"><?php esc_html_e( 'No issues recorded.', 'esmo-accessibility-scanner' ); ?></p>
 				<?php else : ?>
-					<table class="widefat striped ag-table">
+					<table class="widefat striped esmoas-table">
 						<thead>
 							<tr>
-								<th scope="col"><?php esc_html_e( 'Rule', 'accessibility-guardian' ); ?></th>
-								<th scope="col"><?php esc_html_e( 'WCAG', 'accessibility-guardian' ); ?></th>
-								<th scope="col"><?php esc_html_e( 'Severity', 'accessibility-guardian' ); ?></th>
-								<th scope="col"><?php esc_html_e( 'Count', 'accessibility-guardian' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Rule', 'esmo-accessibility-scanner' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'WCAG', 'esmo-accessibility-scanner' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Severity', 'esmo-accessibility-scanner' ); ?></th>
+								<th scope="col"><?php esc_html_e( 'Count', 'esmo-accessibility-scanner' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
-							<?php foreach ( $accg_top_rules as $accg_rule ) : ?>
+							<?php foreach ( $esmoas_top_rules as $esmoas_rule ) : ?>
 								<tr>
-									<td><code><?php echo esc_html( (string) $accg_rule['rule_id'] ); ?></code></td>
-									<td><?php echo esc_html( (string) $accg_rule['wcag_ref'] ); ?></td>
-									<td><span class="ag-pill ag-pill--<?php echo esc_attr( (string) $accg_rule['severity'] ); ?>"><?php echo esc_html( ucfirst( (string) $accg_rule['severity'] ) ); ?></span></td>
-									<td><?php echo esc_html( (string) $accg_rule['total'] ); ?></td>
+									<td><code><?php echo esc_html( (string) $esmoas_rule['rule_id'] ); ?></code></td>
+									<td><?php echo esc_html( (string) $esmoas_rule['wcag_ref'] ); ?></td>
+									<td><span class="esmoas-pill esmoas-pill--<?php echo esc_attr( (string) $esmoas_rule['severity'] ); ?>"><?php echo esc_html( ucfirst( (string) $esmoas_rule['severity'] ) ); ?></span></td>
+									<td><?php echo esc_html( (string) $esmoas_rule['total'] ); ?></td>
 								</tr>
 							<?php endforeach; ?>
 						</tbody>
@@ -205,30 +205,30 @@ $accg_export_base = wp_nonce_url(
 			</section>
 		</div>
 
-		<section class="ag-panel" aria-labelledby="ag-recent-heading">
-			<h2 id="ag-recent-heading"><?php esc_html_e( 'Recent scans', 'accessibility-guardian' ); ?></h2>
-			<table class="widefat striped ag-table">
+		<section class="esmoas-panel" aria-labelledby="esmoas-recent-heading">
+			<h2 id="esmoas-recent-heading"><?php esc_html_e( 'Recent scans', 'esmo-accessibility-scanner' ); ?></h2>
+			<table class="widefat striped esmoas-table">
 				<thead>
 					<tr>
-						<th scope="col"><?php esc_html_e( 'Date', 'accessibility-guardian' ); ?></th>
-						<th scope="col"><?php esc_html_e( 'Type', 'accessibility-guardian' ); ?></th>
-						<th scope="col"><?php esc_html_e( 'Pages', 'accessibility-guardian' ); ?></th>
-						<th scope="col"><?php esc_html_e( 'Score', 'accessibility-guardian' ); ?></th>
-						<th scope="col"><?php esc_html_e( 'Errors', 'accessibility-guardian' ); ?></th>
-						<th scope="col"><?php esc_html_e( 'Warnings', 'accessibility-guardian' ); ?></th>
-						<th scope="col"><?php esc_html_e( 'Status', 'accessibility-guardian' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Date', 'esmo-accessibility-scanner' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Type', 'esmo-accessibility-scanner' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Pages', 'esmo-accessibility-scanner' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Score', 'esmo-accessibility-scanner' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Errors', 'esmo-accessibility-scanner' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Warnings', 'esmo-accessibility-scanner' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Status', 'esmo-accessibility-scanner' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $accg_recent as $accg_row ) : ?>
+					<?php foreach ( $esmoas_recent as $esmoas_row ) : ?>
 						<tr>
-							<td><?php echo esc_html( (string) $accg_row['started_at'] ); ?></td>
-							<td><?php echo esc_html( ucfirst( (string) $accg_row['scan_type'] ) ); ?></td>
-							<td><?php echo esc_html( (string) $accg_row['total_urls'] ); ?></td>
-							<td><?php echo 'complete' === (string) $accg_row['status'] ? esc_html( (string) $accg_row['score'] ) : '&ndash;'; ?></td>
-							<td><?php echo esc_html( (string) $accg_row['errors'] ); ?></td>
-							<td><?php echo esc_html( (string) $accg_row['warnings'] ); ?></td>
-							<td><span class="ag-pill ag-pill--<?php echo esc_attr( (string) $accg_row['status'] ); ?>"><?php echo esc_html( $accg_status_labels[ (string) $accg_row['status'] ] ?? ucfirst( (string) $accg_row['status'] ) ); ?></span></td>
+							<td><?php echo esc_html( (string) $esmoas_row['started_at'] ); ?></td>
+							<td><?php echo esc_html( ucfirst( (string) $esmoas_row['scan_type'] ) ); ?></td>
+							<td><?php echo esc_html( (string) $esmoas_row['total_urls'] ); ?></td>
+							<td><?php echo 'complete' === (string) $esmoas_row['status'] ? esc_html( (string) $esmoas_row['score'] ) : '&ndash;'; ?></td>
+							<td><?php echo esc_html( (string) $esmoas_row['errors'] ); ?></td>
+							<td><?php echo esc_html( (string) $esmoas_row['warnings'] ); ?></td>
+							<td><span class="esmoas-pill esmoas-pill--<?php echo esc_attr( (string) $esmoas_row['status'] ); ?>"><?php echo esc_html( $esmoas_status_labels[ (string) $esmoas_row['status'] ] ?? ucfirst( (string) $esmoas_row['status'] ) ); ?></span></td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>

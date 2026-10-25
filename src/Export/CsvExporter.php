@@ -2,12 +2,12 @@
 /**
  * CSV report exporter.
  *
- * @package AccessibilityGuardian
+ * @package EsmoAccessibilityScanner
  */
 
 declare(strict_types=1);
 
-namespace AccessibilityGuardian\Export;
+namespace EsmoAccessibilityScanner\Export;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -96,6 +96,6 @@ final class CsvExporter {
 	 * @param int $scan_id Scan id.
 	 */
 	public function filename( int $scan_id ): string {
-		return sprintf( 'accessibility-guardian-scan-%d-%s.csv', $scan_id, gmdate( 'Ymd-His' ) );
+		return sprintf( 'esmo-accessibility-scanner-scan-%d-%s.csv', $scan_id, gmdate( 'Ymd-His' ) );
 	}
 }

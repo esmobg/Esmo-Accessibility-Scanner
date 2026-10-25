@@ -1,6 +1,53 @@
 # Changelog
 
-All notable changes to Accessibility Guardian. The WordPress.org changelog lives in [`readme.txt`](readme.txt).
+All notable changes to Esmo Accessibility Scanner, called Accessibility Guardian up to 1.2.0. The WordPress.org changelog lives in [`readme.txt`](readme.txt).
+
+## 1.3.0 — 2026-10-25
+
+Renamed to **Esmo Accessibility Scanner** for the WordPress.org directory, plus a security hardening pass.
+
+### Renamed
+- Plugin name "Esmo Accessibility Scanner", slug and text domain `esmo-accessibility-scanner`, main file `esmo-accessibility-scanner.php`, repository `esmobg/Esmo-Accessibility-Scanner`, website https://esmobg.github.io/Esmo-Accessibility-Scanner/.
+- Prefixes: `accg_` → `esmoas_` (tables, options, AJAX actions, nonces, hooks), `ACCG_` → `ESMOAS_`, namespace `AccessibilityGuardian\` → `EsmoAccessibilityScanner\`, CSS classes and ids `ag-` / `accg-` → `esmoas-`, custom rule ids `ag-…` → `esmoas-…`.
+- Admin menu label "Accessibility Scanner".
+
+### Upgrading from Accessibility Guardian
+- Activation copies the 1.2.0 scans, issues, score history and settings (portable `INSERT … SELECT`, which also works on SQLite), renames stored custom rule ids, and deactivates Accessibility Guardian so automatic fixes are not applied twice. The old data stays until Accessibility Guardian is deleted.
+- A notice on the Plugins screen (also the network Plugins screen) and the plugin's pages explains that the old plugin can be deleted, or, while an import is still pending, warns not to delete it yet. On multisite it checks every site, because deleting the old plugin removes its data on all of them.
+- While Accessibility Guardian still runs (for example reactivated later), 1.3.0 skips its own front-end fixes so they are never applied twice, and the notice says that scans made with the old plugin are not imported.
+- On a multisite where Accessibility Guardian is network-active, 1.3.0 can only be network-activated (per-site activation stops with an explanation), so the old plugin cannot keep writing scans next to it.
+- The six `accg_` hooks keep working through `apply_filters_deprecated()` / `do_action_deprecated()`.
+- Uninstall also removes leftover `accg_` tables and options, but only when Accessibility Guardian is no longer installed.
+- The import is recorded separately (`esmoas_legacy_import`, plus the tables already copied in `esmoas_legacy_import_tables`); if a copy fails, for example because of a database timeout, it is retried at most once an hour, or right away when a scan is started, and copies only the rows that are still missing. New scans wait until the import is complete, so imported and new rows never collide.
+
+### Security
+- `esmoas_save_results` validates everything it receives: the page URL must be an http(s) URL on the site and one the scan queued (new `esmoas_scan_pages` table); each queued page is claimed once, atomically, in the same transaction as its rows (a request that fails or dies part-way leaves no rows behind), and takes its post id from the queue; nothing is accepted after the scan has finished; at most 150 rules per group, 25 elements per rule and 2,500 rows per page; rule ids, impacts and text lengths are checked; non-scalar values are ignored.
+- Single-page scans accept only content with a front-end view that the current user may read (`read_post`); otherwise the Run Scan page falls back to a full scan.
+- URLs added through `esmoas_scan_urls` must be http(s) URLs on the site; labels are plain text.
+- New `esmoas_settings_capability` filter (default `manage_options`), so opening the reports to other roles no longer opens the settings and automatic fixes.
+- Exports send `X-Content-Type-Options: nosniff`.
+- The scan frame no longer allows form submission, and the scanner always injects the bundled axe-core instead of reusing a copy that the page provides.
+- The "Settings saved" notice comes from the redirect instead of a site-wide transient.
+- `finish_scan` is atomic: only the request that moves a scan out of `running` adds the history row and fires `esmoas_scan_completed`. The `passes` count is clamped.
+- CI: every action pinned to a commit SHA, `persist-credentials: false`, Plugin Check runs on the built artifact in a job that executes no repository scripts, Pages permissions only in the deploy job, Dependabot for actions and Composer.
+- Releases: no asset overwrite on re-pushed tags, `.sha256` checksum and build provenance attestation.
+- Build tools: the zip contains only git-tracked files and no symlinks; `build-site.py` validates the release version and refuses to delete folders outside the repository or with tracked files.
+- `SECURITY.md` with private vulnerability reporting.
+
+### Fixed
+- A running scan is marked as failed only after 15 minutes without progress (new `updated_at` column), not one hour after it started, so long scans are no longer lost when another scan starts.
+- HTML snippets are cut by code points: an emoji split in half used to make the whole page's results invalid JSON.
+- Very noisy pages send less detail, step by step, until the results fit the 512 KB limit, instead of losing the page.
+- Page titles and term names in the scan log no longer show HTML entities.
+- Repositories resolve the table prefix per query, so they follow `switch_to_blog()`.
+- Long HTML snippets on the Issues page wrap instead of scrolling sideways (axe `scrollable-region-focusable`, WCAG 1.4.10 reflow).
+
+### Website
+- Esmo brand blue (`#2356EB`) palette, new icon and banners.
+- Content Security Policy (`default-src 'self'`, no inline scripts or styles) and referrer policy; the pre-paint theme script is now `assets/js/theme-init.js`.
+
+### Removed
+- Unused code: `ACCG_PLUGIN_BASENAME`, the `dashboardUrl`, `issuesUrl` and `axeVersion` scanner settings, and `severityFor()` in the custom rules.
 
 ## 1.2.0 — 2026-10-08
 

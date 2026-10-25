@@ -1,5 +1,5 @@
 /**
- * Accessibility Guardian - dashboard enhancements.
+ * Esmo Accessibility Scanner - dashboard enhancements.
  *
  * Renders a lightweight inline SVG trend line for the score history without
  * pulling in an external charting library.
@@ -38,7 +38,7 @@
 			return;
 		}
 
-		var i18n = window.accgDashboard && window.accgDashboard.i18n ? window.accgDashboard.i18n : {};
+		var i18n = window.esmoasDashboard && window.esmoasDashboard.i18n ? window.esmoasDashboard.i18n : {};
 
 		if ( ! points || points.length === 0 ) {
 			container.textContent = i18n.noHistory || container.getAttribute( 'data-empty' ) || 'No history yet.';
@@ -69,7 +69,7 @@
 			viewBox: '0 0 ' + width + ' ' + height,
 			width: String( width ),
 			height: String( height ),
-			class: 'ag-trend__svg',
+			class: 'esmoas-trend__svg',
 			role: 'img',
 		} );
 
@@ -78,8 +78,8 @@
 			: format( i18n.scoreLabel || 'Latest accessibility score %d out of 100', [ last ] );
 		svg.setAttribute( 'aria-label', label );
 
-		svg.appendChild( el( 'line', { x1: pad, x2: width - pad, y1: pad, y2: pad, class: 'ag-trend__grid' } ) );
-		svg.appendChild( el( 'line', { x1: pad, x2: width - pad, y1: height - pad, y2: height - pad, class: 'ag-trend__grid' } ) );
+		svg.appendChild( el( 'line', { x1: pad, x2: width - pad, y1: pad, y2: pad, class: 'esmoas-trend__grid' } ) );
+		svg.appendChild( el( 'line', { x1: pad, x2: width - pad, y1: height - pad, y2: height - pad, class: 'esmoas-trend__grid' } ) );
 
 		if ( coords.length > 1 ) {
 			svg.appendChild( el( 'polyline', {
@@ -100,7 +100,7 @@
 		container.appendChild( svg );
 
 		var caption = document.createElement( 'p' );
-		caption.className = 'ag-trend__caption';
+		caption.className = 'esmoas-trend__caption';
 		if ( scores.length > 1 ) {
 			var delta = last - first;
 			caption.textContent = first + ' → ' + last + ' (' + ( delta > 0 ? '+' : '' ) + delta + ') · ' +
@@ -113,7 +113,7 @@
 	}
 
 	function init() {
-		var trend = document.getElementById( 'ag-trend' );
+		var trend = document.getElementById( 'esmoas-trend' );
 		if ( trend ) {
 			renderTrend( trend );
 		}

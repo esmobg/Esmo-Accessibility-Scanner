@@ -5,29 +5,41 @@ on:
     tags: [ 'v*' ]
 
 permissions:
-  contents: write
+  contents: write     # create the release
+  id-token: write     # sign the build provenance attestation
+  attestations: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.12'
 
       - name: Check that the tag matches the plugin version
         run: |
-          version=$(sed -n 's/^ \* Version: *//p' accessibility-guardian.php | tr -d '[:space:]')
+          version=$(sed -n 's/^ \* Version: *//p' esmo-accessibility-scanner.php | tr -d '[:space:]')
           if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
             echo "Tag ${GITHUB_REF_NAME} does not match plugin version ${version}" >&2
             exit 1
           fi
           echo "VERSION=${version}" >> "$GITHUB_ENV"
 
-      - name: Build release zip
-        run: python bin/build-zip.py
+      - name: Build release zip and checksum
+        run: |
+          python bin/build-zip.py
+          cd dist
+          sha256sum "esmo-accessibility-scanner-${VERSION}.zip" > "esmo-accessibility-scanner-${VERSION}.zip.sha256"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/esmo-accessibility-scanner-${{ env.VERSION }}.zip
 
       - name: Extract release notes from CHANGELOG.md
         run: |
@@ -37,11 +49,13 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+        # No --clobber: a re-pushed tag must never silently replace published files.
         run: |
+          assets=( "dist/esmo-accessibility-scanner-${VERSION}.zip" "dist/esmo-accessibility-scanner-${VERSION}.zip.sha256" )
           if gh release view "${GITHUB_REF_NAME}" > /dev/null 2>&1; then
-            gh release upload "${GITHUB_REF_NAME}" "dist/accessibility-guardian-${VERSION}.zip" --clobber
+            gh release upload "${GITHUB_REF_NAME}" "${assets[@]}"
           else
-            gh release create "${GITHUB_REF_NAME}" "dist/accessibility-guardian-${VERSION}.zip" \
-              --title "Accessibility Guardian ${VERSION}" \
+            gh release create "${GITHUB_REF_NAME}" "${assets[@]}" \
+              --title "Esmo Accessibility Scanner ${VERSION}" \
               --notes-file release-notes.md
           fi
