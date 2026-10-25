@@ -282,7 +282,15 @@ final class Installer {
 			$old = $wpdb->prefix . self::LEGACY_PREFIX . $name;
 			$new = $wpdb->prefix . 'esmoas_' . $name;
 
-			if ( $old !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $old ) ) ) ) {
+			$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $old ) ) );
+
+			// A failed lookup is not proof that the table is gone; retry it later.
+			if ( '' !== $wpdb->last_error ) {
+				$complete = false;
+				continue;
+			}
+
+			if ( $old !== $found ) {
 				$done[] = $name;
 				continue;
 			}
