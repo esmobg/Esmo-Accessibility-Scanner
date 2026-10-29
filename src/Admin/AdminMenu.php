@@ -94,6 +94,8 @@ final class AdminMenu {
 		add_action( 'admin_init', array( $this, 'maybe_save_settings' ) );
 		add_action( 'admin_bar_menu', array( $this, 'add_admin_bar_scan_link' ), 100 );
 		add_action( 'admin_notices', array( $this, 'maybe_show_legacy_plugin_notice' ) );
+		// On multisite, plugins are deleted from the network Plugins screen.
+		add_action( 'network_admin_notices', array( $this, 'maybe_show_legacy_plugin_notice' ) );
 	}
 
 	/**
@@ -126,6 +128,15 @@ final class AdminMenu {
 			printf(
 				'<div class="notice notice-warning"><p>%s</p></div>',
 				esc_html__( 'Esmo Accessibility Scanner has not finished importing the scans of Accessibility Guardian yet and will try again automatically. Do not delete Accessibility Guardian until this message is gone, or its remaining data will be lost.', 'esmo-accessibility-scanner' )
+			);
+			return;
+		}
+
+		// Deleting the old plugin removes the data of every site, so the other sites must be done too.
+		if ( Installer::legacy_import_pending_anywhere() ) {
+			printf(
+				'<div class="notice notice-warning"><p>%s</p></div>',
+				esc_html__( 'On some sites of this network, the scans of Accessibility Guardian are not imported yet. They are imported once Esmo Accessibility Scanner is active on that site. Do not delete Accessibility Guardian until this message is gone: deleting it removes its data on every site.', 'esmo-accessibility-scanner' )
 			);
 			return;
 		}

@@ -147,6 +147,47 @@ final class Installer {
 	}
 
 	/**
+	 * Whether any site still has data from 1.2.0 that has not been fully imported.
+	 *
+	 * Deleting Accessibility Guardian removes the data of every site of a network,
+	 * so every site is checked, including sites where this plugin is not active yet.
+	 */
+	public static function legacy_import_pending_anywhere(): bool {
+		global $wpdb;
+
+		if ( ! is_multisite() ) {
+			return self::legacy_import_pending();
+		}
+
+		$legacy = self::LEGACY_PREFIX . 'db_version';
+
+		foreach ( get_sites(
+			array(
+				'fields' => 'ids',
+				'number' => 0,
+			)
+		) as $site_id ) {
+			// One query per site instead of switch_to_blog(), which loads every site's options.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$values = $wpdb->get_results(
+				$wpdb->prepare(
+					'SELECT option_name, option_value FROM %i WHERE option_name IN ( %s, %s )',
+					$wpdb->get_blog_prefix( (int) $site_id ) . 'options',
+					$legacy,
+					self::IMPORT_OPTION
+				),
+				OBJECT_K
+			);
+
+			if ( isset( $values[ $legacy ] ) && 'done' !== ( $values[ self::IMPORT_OPTION ]->option_value ?? '' ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Create tables for a site added to a network where the plugin is network-active.
 	 *
 	 * @param \WP_Site $site New site object.
@@ -241,7 +282,15 @@ final class Installer {
 			$old = $wpdb->prefix . self::LEGACY_PREFIX . $name;
 			$new = $wpdb->prefix . 'esmoas_' . $name;
 
-			if ( $old !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $old ) ) ) ) {
+			$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $old ) ) );
+
+			// A failed lookup is not proof that the table is gone; retry it later.
+			if ( '' !== $wpdb->last_error ) {
+				$complete = false;
+				continue;
+			}
+
+			if ( $old !== $found ) {
 				$done[] = $name;
 				continue;
 			}

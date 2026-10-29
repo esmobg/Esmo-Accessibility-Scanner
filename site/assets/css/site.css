@@ -441,6 +441,22 @@ p {
 	align-items: center;
 }
 
+/* The logo's dark lettering needs a light tile on the dark hero, in both themes. */
+.hero__logo {
+	width: fit-content;
+	margin: 0 0 1.5rem;
+	padding: 0.85rem 1rem;
+	border-radius: var(--radius);
+	background: #ffffff;
+	box-shadow: 0 12px 32px rgba(4, 12, 40, 0.35);
+}
+
+.hero__logo img {
+	display: block;
+	width: clamp(7rem, 5.5rem + 5vw, 10.5rem);
+	height: auto;
+}
+
 .eyebrow {
 	display: inline-block;
 	margin: 0 0 1rem;

@@ -193,19 +193,26 @@ final class ScanController {
 		$payload['post_id'] = $post_id;
 
 		$issues = $this->normalizer->normalize( $payload );
-		$ids    = $this->issues->insert_batch( $scan_id, $issues );
 
 		// A page counts as scanned only with all of its rows stored, and only once:
-		// the rows are written first and removed again if storing or claiming fails.
+		// rows and claim are one transaction, and the rows are removed again if storing
+		// or claiming fails (for tables without transactions).
+		$this->scans->begin();
+		$ids = $this->issues->insert_batch( $scan_id, $issues );
+
 		if ( count( $ids ) !== count( $issues ) ) {
+			$this->scans->rollback();
 			$this->issues->delete_ids( $scan_id, $ids );
 			wp_send_json_error( array( 'message' => __( 'The results of this page could not be stored.', 'esmo-accessibility-scanner' ) ), 500 );
 		}
 
 		if ( ! $this->scans->claim_page( $scan_id, $payload['url'] ) ) {
+			$this->scans->rollback();
 			$this->issues->delete_ids( $scan_id, $ids );
 			wp_send_json_error( array( 'message' => __( 'This page is not waiting for results in this scan.', 'esmo-accessibility-scanner' ) ), 409 );
 		}
+
+		$this->scans->commit();
 
 		wp_send_json_success(
 			array(

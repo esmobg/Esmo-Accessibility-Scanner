@@ -157,6 +157,35 @@ final class ScanRepository {
 	}
 
 	/**
+	 * Start a transaction around saving a page, so a request that dies part-way
+	 * (time limit, lost connection) leaves no rows behind. Tables without
+	 * transactions (MyISAM) ignore it; callers still remove rows on failure.
+	 */
+	public function begin(): void {
+		global $wpdb;
+
+		$wpdb->query( 'START TRANSACTION' );
+	}
+
+	/**
+	 * Commit the transaction started by begin().
+	 */
+	public function commit(): void {
+		global $wpdb;
+
+		$wpdb->query( 'COMMIT' );
+	}
+
+	/**
+	 * Roll back the transaction started by begin().
+	 */
+	public function rollback(): void {
+		global $wpdb;
+
+		$wpdb->query( 'ROLLBACK' );
+	}
+
+	/**
 	 * Forget the queue of scans that are no longer running.
 	 */
 	private function forget_finished_pages(): void {

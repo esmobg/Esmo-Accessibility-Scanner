@@ -9,14 +9,14 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-23T13:22:12+00:00\n"
+"POT-Creation-Date: 2026-10-25T10:18:43+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: esmo-accessibility-scanner\n"
 
 #. Plugin Name of the plugin
 #: esmo-accessibility-scanner.php
-#: src/Admin/AdminMenu.php:181
+#: src/Admin/AdminMenu.php:192
 #: templates/dashboard.php:62
 msgid "Esmo Accessibility Scanner"
 msgstr ""
@@ -53,55 +53,59 @@ msgstr ""
 msgid "Plugin not activated"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:128
+#: src/Admin/AdminMenu.php:130
 msgid "Esmo Accessibility Scanner has not finished importing the scans of Accessibility Guardian yet and will try again automatically. Do not delete Accessibility Guardian until this message is gone, or its remaining data will be lost."
 msgstr ""
 
-#: src/Admin/AdminMenu.php:134
+#: src/Admin/AdminMenu.php:139
+msgid "On some sites of this network, the scans of Accessibility Guardian are not imported yet. They are imported once Esmo Accessibility Scanner is active on that site. Do not delete Accessibility Guardian until this message is gone: deleting it removes its data on every site."
+msgstr ""
+
+#: src/Admin/AdminMenu.php:145
 msgid "Esmo Accessibility Scanner is the new name of Accessibility Guardian and has imported its scans and settings. While Accessibility Guardian is active, only its automatic fixes are applied, and scans made with it are not imported. Please deactivate and delete it."
 msgstr ""
 
-#: src/Admin/AdminMenu.php:135
+#: src/Admin/AdminMenu.php:146
 msgid "Esmo Accessibility Scanner is the new name of Accessibility Guardian. Its scans and settings were imported and the old plugin was deactivated, so you can now delete Accessibility Guardian."
 msgstr ""
 
-#: src/Admin/AdminMenu.php:162
+#: src/Admin/AdminMenu.php:173
 msgid "Scan accessibility"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:182
+#: src/Admin/AdminMenu.php:193
 msgid "Accessibility Scanner"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:192
-#: src/Admin/AdminMenu.php:193
+#: src/Admin/AdminMenu.php:203
+#: src/Admin/AdminMenu.php:204
 msgid "Dashboard"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:201
-#: src/Admin/AdminMenu.php:202
+#: src/Admin/AdminMenu.php:212
+#: src/Admin/AdminMenu.php:213
 msgid "Run Scan"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:210
-#: src/Admin/AdminMenu.php:211
+#: src/Admin/AdminMenu.php:221
+#: src/Admin/AdminMenu.php:222
 msgid "Issues"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:219
-#: src/Admin/AdminMenu.php:220
+#: src/Admin/AdminMenu.php:230
+#: src/Admin/AdminMenu.php:231
 msgid "Settings"
 msgstr ""
 
-#: src/Admin/AdminMenu.php:343
+#: src/Admin/AdminMenu.php:354
 msgid "Settings saved."
 msgstr ""
 
-#: src/Admin/AdminMenu.php:369
+#: src/Admin/AdminMenu.php:380
 msgid "You are not allowed to manage these settings."
 msgstr ""
 
-#: src/Admin/AdminMenu.php:414
+#: src/Admin/AdminMenu.php:425
 msgid "You do not have permission to access this page."
 msgstr ""
 
@@ -866,7 +870,7 @@ msgid "Scan payload is too large."
 msgstr ""
 
 #: src/Scan/ScanController.php:175
-#: src/Scan/ScanController.php:289
+#: src/Scan/ScanController.php:296
 msgid "Scan is not running."
 msgstr ""
 
@@ -879,19 +883,19 @@ msgid "The scanned page is not on this site."
 msgstr ""
 
 #: src/Scan/ScanController.php:191
-#: src/Scan/ScanController.php:207
+#: src/Scan/ScanController.php:212
 msgid "This page is not waiting for results in this scan."
 msgstr ""
 
-#: src/Scan/ScanController.php:202
+#: src/Scan/ScanController.php:206
 msgid "The results of this page could not be stored."
 msgstr ""
 
-#: src/Scan/ScanController.php:231
+#: src/Scan/ScanController.php:238
 msgid "Invalid scan id."
 msgstr ""
 
-#: src/Scan/ScanController.php:312
+#: src/Scan/ScanController.php:319
 msgid "You are not allowed to run scans."
 msgstr ""
 

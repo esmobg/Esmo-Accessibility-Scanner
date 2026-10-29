@@ -5,7 +5,7 @@ Usage:
     python bin/build-site.py                                 # -> .site-build/
     python bin/build-site.py --out _site --require-release   # used by .github/workflows/pages.yml
 
-Copies site/, adds the icon, banner and screenshots from wp-org-assets/
+Copies site/, adds the banner and screenshots from wp-org-assets/
 (so binary files are not duplicated in git) and replaces the __VERSION__
 and __BUILD_DATE__ placeholders.
 
@@ -36,8 +36,6 @@ SLUG = "esmo-accessibility-scanner"
 LEGACY_SLUG = "accessibility-guardian"  # zip name of releases up to 1.2.0
 VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 IMAGES = [
-    "icon.svg",
-    "icon-256x256.png",
     "banner-1544x500.png",
     "screenshot-1.png",
     "screenshot-2.png",

@@ -15,7 +15,7 @@ Fewer false positives, found while scanning a Bulgarian WooCommerce site (77/100
 ### Changed
 - **"Needs review" is its own severity (`review`).** axe-core's incomplete results (it could not decide, for example contrast over a background image or a pseudo-element) were stored as warnings and cost 1 point each. They are now listed under **Needs review**, shown separately on the dashboard, the Issues page and the scan summary, and have weight 0. Scans made before 1.3.1 keep their stored severities.
 
-## 1.3.0 — 2026-10-23
+## 1.3.0 — 2026-10-25
 
 Renamed to **Esmo Accessibility Scanner** for the WordPress.org directory, plus a security hardening pass.
 
@@ -26,7 +26,7 @@ Renamed to **Esmo Accessibility Scanner** for the WordPress.org directory, plus 
 
 ### Upgrading from Accessibility Guardian
 - Activation copies the 1.2.0 scans, issues, score history and settings (portable `INSERT … SELECT`, which also works on SQLite), renames stored custom rule ids, and deactivates Accessibility Guardian so automatic fixes are not applied twice. The old data stays until Accessibility Guardian is deleted.
-- A notice on the Plugins screen and the plugin's pages explains that the old plugin can be deleted, or, while an import is still pending, warns not to delete it yet.
+- A notice on the Plugins screen (also the network Plugins screen) and the plugin's pages explains that the old plugin can be deleted, or, while an import is still pending, warns not to delete it yet. On multisite it checks every site, because deleting the old plugin removes its data on all of them.
 - While Accessibility Guardian still runs (for example reactivated later), 1.3.0 skips its own front-end fixes so they are never applied twice, and the notice says that scans made with the old plugin are not imported.
 - On a multisite where Accessibility Guardian is network-active, 1.3.0 can only be network-activated (per-site activation stops with an explanation), so the old plugin cannot keep writing scans next to it.
 - The six `accg_` hooks keep working through `apply_filters_deprecated()` / `do_action_deprecated()`.
@@ -34,7 +34,7 @@ Renamed to **Esmo Accessibility Scanner** for the WordPress.org directory, plus 
 - The import is recorded separately (`esmoas_legacy_import`, plus the tables already copied in `esmoas_legacy_import_tables`); if a copy fails, for example because of a database timeout, it is retried at most once an hour, or right away when a scan is started, and copies only the rows that are still missing. New scans wait until the import is complete, so imported and new rows never collide.
 
 ### Security
-- `esmoas_save_results` validates everything it receives: the page URL must be an http(s) URL on the site and one the scan queued (new `esmoas_scan_pages` table); each queued page is claimed once, atomically, after all of its rows are stored (rows are removed again if storing or claiming fails), and takes its post id from the queue; nothing is accepted after the scan has finished; at most 150 rules per group, 25 elements per rule and 2,500 rows per page; rule ids, impacts and text lengths are checked; non-scalar values are ignored.
+- `esmoas_save_results` validates everything it receives: the page URL must be an http(s) URL on the site and one the scan queued (new `esmoas_scan_pages` table); each queued page is claimed once, atomically, in the same transaction as its rows (a request that fails or dies part-way leaves no rows behind), and takes its post id from the queue; nothing is accepted after the scan has finished; at most 150 rules per group, 25 elements per rule and 2,500 rows per page; rule ids, impacts and text lengths are checked; non-scalar values are ignored.
 - Single-page scans accept only content with a front-end view that the current user may read (`read_post`); otherwise the Run Scan page falls back to a full scan.
 - URLs added through `esmoas_scan_urls` must be http(s) URLs on the site; labels are plain text.
 - New `esmoas_settings_capability` filter (default `manage_options`), so opening the reports to other roles no longer opens the settings and automatic fixes.
