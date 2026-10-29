@@ -3,7 +3,7 @@
  * Plugin Name:       Esmo Accessibility Scanner
  * Plugin URI:        https://github.com/esmobg/Esmo-Accessibility-Scanner
  * Description:       Automated WCAG 2.2 AA accessibility auditor for WordPress. Scans posts, pages, custom post types, products and terms with axe-core and reports issues with remediation guidance.
- * Version:           1.3.0
+ * Version:           1.3.1
  * Requires at least: 6.4
  * Requires PHP:      8.0
  * Author:            esmobg
@@ -34,7 +34,7 @@ if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
 	return;
 }
 
-define( 'ESMOAS_VERSION', '1.3.0' );
+define( 'ESMOAS_VERSION', '1.3.1' );
 define( 'ESMOAS_PLUGIN_FILE', __FILE__ );
 define( 'ESMOAS_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ESMOAS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

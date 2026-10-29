@@ -50,6 +50,18 @@ final class ScoreCalculatorTest extends TestCase {
 		$this->assertSame( 70, $score );
 	}
 
+	public function test_needs_review_items_cost_nothing(): void {
+		$score = $this->calculator->calculate(
+			array(
+				'major'  => 1,
+				'review' => 40,
+			)
+		);
+
+		$this->assertSame( 95, $score );
+		$this->assertSame( 0, $this->calculator->warning_count( array( 'review' => 40 ) ) );
+	}
+
 	public function test_score_is_clamped_to_zero(): void {
 		$score = $this->calculator->calculate( array( 'critical' => 50 ) );
 

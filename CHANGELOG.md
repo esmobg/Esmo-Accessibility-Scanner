@@ -2,6 +2,19 @@
 
 All notable changes to Esmo Accessibility Scanner, called Accessibility Guardian up to 1.2.0. The WordPress.org changelog lives in [`readme.txt`](readme.txt).
 
+## 1.3.1 — 2026-10-29
+
+Fewer false positives, found while scanning a Bulgarian WooCommerce site (77/100 before, 100/100 after, with no change to the site).
+
+### Fixed
+- **Pages are scanned at rest.** `scanner.js` waits `esmoas_scan_settle_delay` milliseconds (default 500, 0–5,000) after the frame's load event, for scripts that finish later (for example blocks hydrated by the Interactivity API), then finishes running transitions and finite animations (`document.getAnimations()`, `finish()`); infinite animations are left alone. The hidden frame may not animate at all, and a cookie bar caught mid-fade (opacity 0.98) was reported as a contrast failure.
+- **The WordPress toolbar is removed** from the frame's copy of the page before axe runs. Its links come before the page's own, so axe stopped treating the skip link as one and reported `region` on every page; visitors do not have the toolbar, and it was excluded from the results anyway.
+- **New-window check in any language.** `esmoas-new-window-warning` looked only for English (`new window|new tab|opens in`) in `aria-label` or the text. It now reads the link's name including visually hidden text, its `title` and `aria-describedby`, and accepts built-in phrases in English, Bulgarian, Russian, German, French, Spanish, Italian, Portuguese, Dutch, Polish and Romanian, "new window" / "new tab" translated into the admin's and the site's language, and anything added with the new `esmoas_new_window_phrases` filter.
+- The "Most common problems" table on the dashboard shows the translated severity name instead of the internal key.
+
+### Changed
+- **"Needs review" is its own severity (`review`).** axe-core's incomplete results (it could not decide, for example contrast over a background image or a pseudo-element) were stored as warnings and cost 1 point each. They are now listed under **Needs review**, shown separately on the dashboard, the Issues page and the scan summary, and have weight 0. Scans made before 1.3.1 keep their stored severities.
+
 ## 1.3.0 — 2026-10-25
 
 Renamed to **Esmo Accessibility Scanner** for the WordPress.org directory, plus a security hardening pass.

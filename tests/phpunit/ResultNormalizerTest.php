@@ -58,7 +58,7 @@ final class ResultNormalizerTest extends TestCase {
 		$this->assertSame( 'open', $issue['status'] );
 	}
 
-	public function test_incomplete_results_are_marked_as_warning(): void {
+	public function test_incomplete_results_are_marked_for_review(): void {
 		$payload = array(
 			'url'        => 'https://example.com/',
 			'post_id'    => 0,
@@ -80,7 +80,7 @@ final class ResultNormalizerTest extends TestCase {
 		$issues = $this->normalizer->normalize( $payload );
 
 		$this->assertCount( 1, $issues );
-		$this->assertSame( 'warning', $issues[0]['severity'] );
+		$this->assertSame( 'review', $issues[0]['severity'] );
 		$this->assertStringContainsString( 'Needs manual review', $issues[0]['message'] );
 	}
 
@@ -275,6 +275,8 @@ final class ResultNormalizerTest extends TestCase {
 			array( 'severity' => 'critical' ),
 			array( 'severity' => 'minor' ),
 			array( 'severity' => 'warning' ),
+			array( 'severity' => 'review' ),
+			array( 'severity' => 'review' ),
 		);
 
 		$counts = $this->normalizer->severity_counts( $issues );
@@ -283,5 +285,6 @@ final class ResultNormalizerTest extends TestCase {
 		$this->assertSame( 0, $counts['major'] );
 		$this->assertSame( 1, $counts['minor'] );
 		$this->assertSame( 1, $counts['warning'] );
+		$this->assertSame( 2, $counts['review'] );
 	}
 }

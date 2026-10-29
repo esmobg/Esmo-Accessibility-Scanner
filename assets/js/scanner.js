@@ -213,6 +213,49 @@
 	}
 
 	/**
+	 * Let the page come to rest before axe looks at it. Scripts that finish after
+	 * the load event (block hydration such as the Interactivity API) get a moment,
+	 * then running transitions and finite animations jump to their end state: the
+	 * hidden frame may not animate at all, and a half-faded element (a cookie bar
+	 * fading in) would otherwise be reported with a contrast it never has at rest.
+	 * Infinite animations are left alone. The delay is the esmoas_scan_settle_delay filter.
+	 * The WordPress toolbar (there because the frame loads pages as the logged-in
+	 * administrator, and never reported on) is removed from the frame's copy of the
+	 * page: visitors do not have it, and its links before the page's own would make
+	 * axe stop treating the skip link as one ("region" on every page).
+	 */
+	function settle( ctx ) {
+		var delay = parseInt( settings.settleDelay, 10 );
+		delay = isNaN( delay ) ? 500 : Math.max( 0, delay );
+
+		return new Promise( function ( resolve ) {
+			window.setTimeout( function () {
+				try {
+					var toolbar = ctx.doc.getElementById( 'wpadminbar' );
+					if ( toolbar && toolbar.parentNode ) {
+						toolbar.parentNode.removeChild( toolbar );
+					}
+				} catch ( err ) {
+					// Scanned with the toolbar, which axe excludes anyway.
+				}
+				try {
+					if ( typeof ctx.doc.getAnimations === 'function' ) {
+						ctx.doc.getAnimations().forEach( function ( animation ) {
+							var timing = animation.effect && animation.effect.getComputedTiming ? animation.effect.getComputedTiming() : null;
+							if ( 'running' === animation.playState && timing && isFinite( timing.endTime ) ) {
+								animation.finish();
+							}
+						} );
+					}
+				} catch ( err ) {
+					// A page that breaks the Web Animations API is scanned as it is.
+				}
+				resolve( ctx );
+			}, delay );
+		} );
+	}
+
+	/**
 	 * Load a URL into the hidden iframe and resolve with its document once ready.
 	 */
 	function loadFrame( url ) {
@@ -261,6 +304,7 @@
 		setProgress( state.index, state.queue.length, t( 'scanning', 'Scanning' ) + ': ' + entry.label );
 
 		loadFrame( entry.url )
+			.then( settle )
 			.then( injectAxe )
 			.then( function ( ctx ) {
 				return analyze( ctx.win, ctx.doc );
@@ -342,6 +386,7 @@
 		fill( 'esmoas-result-major', counts.major || 0 );
 		fill( 'esmoas-result-minor', counts.minor || 0 );
 		fill( 'esmoas-result-warning', counts.warning || 0 );
+		fill( 'esmoas-result-review', counts.review || 0 );
 
 		// Point "Review issues" at this scan, which matters for cancelled (partial) scans.
 		var issuesLink = document.getElementById( 'esmoas-result-issues' );

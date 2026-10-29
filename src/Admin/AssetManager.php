@@ -39,6 +39,42 @@ final class AssetManager {
 	}
 
 	/**
+	 * Phrases that warn a link opens a new window, in the admin's and the site's
+	 * language (the scanned pages are in the site language), for the new-window check.
+	 *
+	 * @return array<int, string>
+	 */
+	private function new_window_phrases(): array {
+		$translate = static function (): array {
+			return array(
+				_x( 'new window', 'phrase a link uses to say it opens a new window', 'esmo-accessibility-scanner' ),
+				_x( 'new tab', 'phrase a link uses to say it opens a new tab', 'esmo-accessibility-scanner' ),
+			);
+		};
+
+		$phrases  = $translate();
+		$switched = get_locale() !== determine_locale() && switch_to_locale( get_locale() );
+		if ( $switched ) {
+			$phrases = array_merge( $phrases, $translate() );
+			restore_previous_locale();
+		}
+
+		/**
+		 * Filters the phrases that count as warning that a link opens a new window
+		 * (case-insensitive, matched anywhere in the link's name, title or description).
+		 * Common English, Bulgarian, Russian, German, French, Spanish, Italian, Portuguese,
+		 * Dutch, Polish and Romanian phrases are built in.
+		 *
+		 * @since 1.3.1
+		 *
+		 * @param array<int, string> $phrases Phrases.
+		 */
+		$phrases = (array) apply_filters( 'esmoas_new_window_phrases', $phrases );
+
+		return array_values( array_unique( array_filter( array_map( 'strval', array_filter( $phrases, 'is_scalar' ) ), 'strlen' ) ) );
+	}
+
+	/**
 	 * Register the enqueue hook.
 	 */
 	public function register(): void {
@@ -87,6 +123,7 @@ final class AssetManager {
 				'newWindowSummary'     => __( 'Link opens in a new window without warning the user.', 'esmo-accessibility-scanner' ),
 				'pdfHelp'              => __( 'Verify accessibility of linked PDF documents', 'esmo-accessibility-scanner' ),
 				'pdfSummary'           => __( 'Linked PDF detected; verify it is tagged and accessible.', 'esmo-accessibility-scanner' ),
+				'newWindowPhrases'     => $this->new_window_phrases(),
 			)
 		);
 
@@ -134,6 +171,17 @@ final class AssetManager {
 			$axe_options = array();
 		}
 
+		/**
+		 * Filters how long (in milliseconds) a scanned page may settle after loading
+		 * before axe runs; running transitions and finite animations are then finished.
+		 *
+		 * @since 1.3.1
+		 *
+		 * @param int $delay Milliseconds, 0 to 5000. Default 500.
+		 */
+		$settle_delay = (int) apply_filters( 'esmoas_scan_settle_delay', 500 );
+		$settle_delay = max( 0, min( 5000, $settle_delay ) );
+
 		wp_localize_script(
 			'esmoas-scanner',
 			'esmoasScanner',
@@ -142,6 +190,7 @@ final class AssetManager {
 				'nonce'        => wp_create_nonce( ScanController::NONCE_ACTION ),
 				'axeUrl'       => add_query_arg( 'ver', self::AXE_VERSION . '-' . ESMOAS_VERSION, ESMOAS_PLUGIN_URL . 'assets/js/axe.min.js' ),
 				'axeOptions'   => $axe_options,
+				'settleDelay'  => $settle_delay,
 				'i18n'         => array(
 					'preparing'    => __( 'Preparing scan…', 'esmo-accessibility-scanner' ),
 					'scanning'     => __( 'Scanning', 'esmo-accessibility-scanner' ),

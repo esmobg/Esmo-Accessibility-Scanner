@@ -109,8 +109,10 @@ final class ResultNormalizer {
 		// Best-practice rules (headings, landmarks, ...) are advisory, not WCAG failures.
 		$best_practice = true === ( $result['bestPractice'] ?? false );
 
+		// "Needs review": axe could not decide (e.g. contrast over a pseudo-element or a
+		// background image). Listed for a person to check, but not counted as a failure.
 		$meta     = $this->catalog->get( $rule_id, $impact );
-		$severity = ( $is_incomplete || $best_practice ) ? 'warning' : $meta['severity'];
+		$severity = $is_incomplete ? 'review' : ( $best_practice ? 'warning' : $meta['severity'] );
 
 		$nodes = isset( $result['nodes'] ) && is_array( $result['nodes'] ) ? array_slice( $result['nodes'], 0, self::MAX_NODES ) : array();
 
@@ -168,6 +170,7 @@ final class ResultNormalizer {
 			'major'    => 0,
 			'minor'    => 0,
 			'warning'  => 0,
+			'review'   => 0,
 		);
 
 		foreach ( $issues as $issue ) {

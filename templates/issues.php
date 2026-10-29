@@ -35,6 +35,7 @@ $esmoas_severity_labels = array(
 	'major'    => __( 'Major', 'esmo-accessibility-scanner' ),
 	'minor'    => __( 'Minor', 'esmo-accessibility-scanner' ),
 	'warning'  => __( 'Warning', 'esmo-accessibility-scanner' ),
+	'review'   => __( 'Needs review', 'esmo-accessibility-scanner' ),
 );
 
 $esmoas_total = array_sum( $esmoas_severity_counts );

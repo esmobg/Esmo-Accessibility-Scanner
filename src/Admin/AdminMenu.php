@@ -318,7 +318,7 @@ final class AdminMenu {
 			$scan_id = null !== $latest ? (int) $latest['id'] : 0;
 		}
 
-		$valid_sev = array( 'critical', 'major', 'minor', 'warning' );
+		$valid_sev = array( 'critical', 'major', 'minor', 'warning', 'review' );
 		if ( '' !== $severity && ! in_array( $severity, $valid_sev, true ) ) {
 			$severity = '';
 		}

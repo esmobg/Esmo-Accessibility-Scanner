@@ -138,7 +138,8 @@ Every scanned page starts at 100 and loses points for each issue, with a minimum
 | Critical | −10 | missing image alt text, unlabeled buttons, missing document language |
 | Major | −5 | low contrast, missing form labels, broken list structure |
 | Minor | −2 | generic link text, placeholder-only fields |
-| Warning | −1 | items that need manual review, best-practice findings, new-window links, PDFs |
+| Warning | −1 | best-practice findings, new-window links, PDFs |
+| Needs review | 0 | results axe-core cannot decide on its own (for example contrast over a background image or a pseudo-element): listed for a person to check, but not scored (since 1.3.1) |
 
 The **site score** is the average of the per-page scores, so one bad page does not hide an otherwise good site and pages without issues count as 100.
 
@@ -149,7 +150,7 @@ The **site score** is the average of the per-page scores, so one bad page does n
 | Needs Improvement | 60–79 |
 | Poor | below 60 |
 
-On the dashboard, **Errors** are Critical + Major issues and **Warnings** are Minor + Warning issues.
+On the dashboard, **Errors** are Critical + Major issues and **Warnings** are Minor + Warning issues. Needs review items are shown separately.
 
 ## Automatic fixes
 
@@ -190,7 +191,7 @@ flowchart LR
 ```
 
 1. **Start.** `esmoas_start_scan` builds the queue of URLs (home page, published content in ID order, optional term archives, capped at 1,000) and creates a scan record.
-2. **Scan.** For each URL, `assets/js/scanner.js` loads the page in a sandboxed, same-origin frame, injects the bundled axe-core and runs it with the configured WCAG tags. `assets/js/custom-rules.js` adds the supplemental checks. The WordPress toolbar is excluded.
+2. **Scan.** For each URL, `assets/js/scanner.js` loads the page in a sandboxed, same-origin frame, lets it settle, injects the bundled axe-core and runs it with the configured WCAG tags. `assets/js/custom-rules.js` adds the supplemental checks. Settling (since 1.3.1): after a short pause (`esmoas_scan_settle_delay`, 500 ms) for scripts that finish after the load event, running transitions and finite animations jump to their end state, so a half-faded element is not reported with a contrast it never has at rest; the WordPress toolbar, which visitors do not have, is removed from the frame's copy of the page.
 3. **Save.** The results are sent to `esmoas_save_results`, checked and normalized into issue rows (severity, WCAG reference, category, fix, documentation link) and stored. The server treats the browser's data as untrusted: the page must be one the scan queued (the queue is kept on the server), each page can be saved once, its post id comes from the queue, and at most 150 rules per group, 25 elements per rule and 2,500 rows per page are kept.
 4. **Finish.** `esmoas_finish_scan` calculates the per-page and site score, stores the totals and adds a point to the history, or marks the scan as cancelled.
 
@@ -264,6 +265,8 @@ Deleting the plugin removes all of it, on every site of a network. Leftovers fro
 | `esmoas_required_capability` | `manage_options` | Capability needed to view reports, run scans and export |
 | `esmoas_settings_capability` | `manage_options` | Capability needed to change the settings, including the site-wide automatic fixes (since 1.3.0) |
 | `esmoas_skip_link_target` | `#content` | `href` of the skip link added by the skip-link fix |
+| `esmoas_scan_settle_delay` | `500` | Milliseconds a scanned page may settle after loading before axe runs (0–5,000; since 1.3.1) |
+| `esmoas_new_window_phrases` | `new window`, `new tab` in the admin's and the site's language | Extra phrases that count as warning that a link opens a new window, besides the built-in English, Bulgarian, Russian, German, French, Spanish, Italian, Portuguese, Dutch, Polish and Romanian ones (since 1.3.1) |
 
 ### Actions
 
