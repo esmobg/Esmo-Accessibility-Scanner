@@ -141,6 +141,7 @@ final class IssueRepository {
 			'major'    => 0,
 			'minor'    => 0,
 			'warning'  => 0,
+			'review'   => 0,
 		);
 
 		if ( is_array( $rows ) ) {
@@ -181,6 +182,7 @@ final class IssueRepository {
 						'major'    => 0,
 						'minor'    => 0,
 						'warning'  => 0,
+						'review'   => 0,
 					);
 				}
 
@@ -261,7 +263,7 @@ final class IssueRepository {
 		if ( '' !== $severity ) {
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$this->table()} WHERE scan_id = %d AND severity = %s ORDER BY FIELD(severity,'critical','major','minor','warning'), id ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT * FROM {$this->table()} WHERE scan_id = %d AND severity = %s ORDER BY FIELD(severity,'critical','major','minor','warning','review'), id ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$scan_id,
 					$severity,
 					$per_page,
@@ -272,7 +274,7 @@ final class IssueRepository {
 		} else {
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$this->table()} WHERE scan_id = %d ORDER BY FIELD(severity,'critical','major','minor','warning'), id ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT * FROM {$this->table()} WHERE scan_id = %d ORDER BY FIELD(severity,'critical','major','minor','warning','review'), id ASC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$scan_id,
 					$per_page,
 					$offset

@@ -124,6 +124,7 @@ $esmoas_export_base = wp_nonce_url(
 						'major'    => __( 'Major', 'esmo-accessibility-scanner' ),
 						'minor'    => __( 'Minor', 'esmo-accessibility-scanner' ),
 						'warning'  => __( 'Warning', 'esmo-accessibility-scanner' ),
+						'review'   => __( 'Needs review', 'esmo-accessibility-scanner' ),
 					);
 					foreach ( $esmoas_severity_labels as $esmoas_key => $esmoas_label ) :
 						$esmoas_value      = (int) ( $esmoas_severity_counts[ $esmoas_key ] ?? 0 );
@@ -195,7 +196,7 @@ $esmoas_export_base = wp_nonce_url(
 								<tr>
 									<td><code><?php echo esc_html( (string) $esmoas_rule['rule_id'] ); ?></code></td>
 									<td><?php echo esc_html( (string) $esmoas_rule['wcag_ref'] ); ?></td>
-									<td><span class="esmoas-pill esmoas-pill--<?php echo esc_attr( (string) $esmoas_rule['severity'] ); ?>"><?php echo esc_html( ucfirst( (string) $esmoas_rule['severity'] ) ); ?></span></td>
+									<td><span class="esmoas-pill esmoas-pill--<?php echo esc_attr( (string) $esmoas_rule['severity'] ); ?>"><?php echo esc_html( $esmoas_severity_labels[ (string) $esmoas_rule['severity'] ] ?? ucfirst( (string) $esmoas_rule['severity'] ) ); ?></span></td>
 									<td><?php echo esc_html( (string) $esmoas_rule['total'] ); ?></td>
 								</tr>
 							<?php endforeach; ?>

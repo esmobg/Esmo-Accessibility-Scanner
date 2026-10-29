@@ -4,7 +4,7 @@ Tags: accessibility, wcag, a11y, accessibility checker, audit
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -87,7 +87,7 @@ WCAG 2.0, 2.1 and 2.2 at Level A and AA (choose A or AA in Settings), plus optio
 
 = How is the score calculated? =
 
-Each scanned page starts at 100 and loses points per issue: Critical 10, Major 5, Minor 2, Warning 1, never going below 0. The site score is the average of all scanned pages, so a few problem pages do not hide an otherwise good site.
+Each scanned page starts at 100 and loses points per issue: Critical 10, Major 5, Minor 2, Warning 1, never going below 0. "Needs review" items, which axe-core cannot decide on its own, are listed for you to check but cost nothing. The site score is the average of all scanned pages, so a few problem pages do not hide an otherwise good site.
 
 = How many pages can a full-site scan cover? =
 
@@ -117,6 +117,13 @@ The unminified axe-core 4.10.2 source is included as `assets/js/axe.js`. The pro
 4. Settings: content to scan, WCAG level, best-practice checks and optional automatic fixes.
 
 == Changelog ==
+
+= 1.3.1 =
+* Fixed: pages are scanned at rest. The scanner waits briefly after a page loads (filter `esmoas_scan_settle_delay`, 500 ms by default) and finishes running transitions and animations, so an element that is still fading in, such as a cookie bar, is no longer reported for low contrast.
+* Fixed: the WordPress toolbar is removed from the scanned copy of the page, so a correct skip link is no longer reported as content outside landmarks on every page.
+* Fixed: links that open a new window are accepted when they warn in the site's language. Visually hidden text, the title and aria-describedby count too. Built-in phrases cover English, Bulgarian, Russian, German, French, Spanish, Italian, Portuguese, Dutch, Polish and Romanian; filter `esmoas_new_window_phrases` adds more.
+* Changed: "Needs review" results (axe-core could not decide, for example contrast over a background image) are a separate category. They are still listed, but no longer lower the score.
+* Fixed: the "Most common problems" table shows translated severity names.
 
 = 1.3.0 =
 * Renamed from "Accessibility Guardian" to "Esmo Accessibility Scanner" for the WordPress.org directory. The slug and text domain are now `esmo-accessibility-scanner`.
@@ -158,6 +165,9 @@ The unminified axe-core 4.10.2 source is included as `assets/js/axe.js`. The pro
 * First public release (GitHub).
 
 == Upgrade Notice ==
+
+= 1.3.1 =
+Fewer false positives: pages are scanned once animations have finished, new-window warnings are recognised in more languages, and "needs review" items no longer lower the score. Run a new scan after updating.
 
 = 1.3.0 =
 Accessibility Guardian is now Esmo Accessibility Scanner. Activate it to import your scans and settings, then delete the old plugin. Also adds server-side validation of scan results.

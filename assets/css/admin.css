@@ -6,6 +6,7 @@
 	--esmoas-major: #b35309;
 	--esmoas-minor: #8a6d00;
 	--esmoas-warning: #135e96;
+	--esmoas-review: #50575e;
 	--esmoas-pass: #1e7e34;
 	max-width: 1100px;
 }
@@ -251,6 +252,10 @@
 	background: var(--esmoas-warning);
 }
 
+.esmoas-bars__fill--review {
+	background: var(--esmoas-review);
+}
+
 .esmoas-bars__fill--category {
 	background: #6c5ce7;
 }
@@ -309,6 +314,10 @@
 
 .esmoas-pill--warning {
 	background: var(--esmoas-warning);
+}
+
+.esmoas-pill--review {
+	background: var(--esmoas-review);
 }
 
 .esmoas-pill--complete {
@@ -469,6 +478,10 @@
 
 .esmoas-result__count--warning .esmoas-result__num {
 	color: var(--esmoas-warning, #135e96);
+}
+
+.esmoas-result__count--review .esmoas-result__num {
+	color: var(--esmoas-review, #50575e);
 }
 
 .esmoas-result__actions {
@@ -649,6 +662,10 @@
 
 .esmoas-issue--warning {
 	border-left-color: var(--esmoas-warning);
+}
+
+.esmoas-issue--review {
+	border-left-color: var(--esmoas-review);
 }
 
 .esmoas-issue__head {

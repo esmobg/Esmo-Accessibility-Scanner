@@ -2,7 +2,7 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Esmo Accessibility Scanner 1.3.0\n"
+"Project-Id-Version: Esmo Accessibility Scanner 1.3.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/esmo-accessibility-scanner\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1238,4 +1238,23 @@ msgstr ""
 
 #: templates/settings.php:107
 msgid "Save settings"
+msgstr ""
+
+#: templates/dashboard.php:127
+#: templates/issues.php:38
+msgid "Needs review"
+msgstr ""
+
+#: templates/scan.php:106
+msgid "Needs review (not scored)"
+msgstr ""
+
+#: src/Admin/AssetManager.php:50
+msgctxt "phrase a link uses to say it opens a new window"
+msgid "new window"
+msgstr ""
+
+#: src/Admin/AssetManager.php:51
+msgctxt "phrase a link uses to say it opens a new tab"
+msgid "new tab"
 msgstr ""

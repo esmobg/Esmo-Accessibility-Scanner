@@ -101,6 +101,10 @@ $esmoas_post_title = $args['post_title'] ?? '';
 				<span class="esmoas-result__num" id="esmoas-result-warning">0</span>
 				<?php esc_html_e( 'Warnings', 'esmo-accessibility-scanner' ); ?>
 			</li>
+			<li class="esmoas-result__count esmoas-result__count--review">
+				<span class="esmoas-result__num" id="esmoas-result-review">0</span>
+				<?php esc_html_e( 'Needs review (not scored)', 'esmo-accessibility-scanner' ); ?>
+			</li>
 		</ul>
 
 		<p class="esmoas-result__actions">

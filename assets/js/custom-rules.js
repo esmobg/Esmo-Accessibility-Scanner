@@ -96,6 +96,39 @@
 			: null;
 	}
 
+	/**
+	 * Phrases that tell the user a link opens a new window or tab, in the
+	 * languages sites are commonly written in, plus the site language's own
+	 * (esmoasCustomRulesI18n.newWindowPhrases, filter esmoas_new_window_phrases).
+	 */
+	var NEW_WINDOW_PHRASES = [
+		'new window', 'new tab', 'opens in',
+		'нов прозорец', 'нов раздел', 'новом окне', 'новой вкладке',
+		'neues fenster', 'neuen fenster', 'neuer tab', 'neuen tab',
+		'nouvelle fenêtre', 'nouvel onglet',
+		'nueva ventana', 'nueva pestaña',
+		'nuova finestra', 'nuova scheda',
+		'nova janela', 'nova aba', 'novo separador',
+		'nieuw venster', 'nieuw tabblad',
+		'nowym oknie', 'nowej karcie',
+		'fereastră nouă', 'filă nouă'
+	].concat( Array.isArray( i18n.newWindowPhrases ) ? i18n.newWindowPhrases : [] );
+
+	/**
+	 * Everything a screen reader may announce for a link: its name (aria-label,
+	 * or the text including visually hidden text), title and aria-describedby.
+	 */
+	function announcedText( link, doc ) {
+		var parts = [ link.getAttribute( 'aria-label' ) || link.textContent || '', link.getAttribute( 'title' ) || '' ];
+		( link.getAttribute( 'aria-describedby' ) || '' ).split( /\s+/ ).forEach( function ( id ) {
+			var described = id ? doc.getElementById( id ) : null;
+			if ( described ) {
+				parts.push( described.textContent || '' );
+			}
+		} );
+		return parts.join( ' ' ).replace( /\s+/g, ' ' ).toLocaleLowerCase();
+	}
+
 	function checkNewWindow( doc ) {
 		var nodes = [];
 		var links = doc.querySelectorAll( 'a[target="_blank"]' );
@@ -103,8 +136,10 @@
 			if ( ! inScope( link ) ) {
 				return;
 			}
-			var label = ( link.getAttribute( 'aria-label' ) || link.textContent || '' ).toLowerCase();
-			var warns = /new window|new tab|opens in/.test( label );
+			var label = announcedText( link, doc );
+			var warns = NEW_WINDOW_PHRASES.some( function ( phrase ) {
+				return phrase && label.indexOf( String( phrase ).toLocaleLowerCase() ) !== -1;
+			} );
 			if ( ! warns ) {
 				nodes.push( nodeFor( link, i18n.newWindowSummary || 'Link opens in a new window without warning the user.' ) );
 			}

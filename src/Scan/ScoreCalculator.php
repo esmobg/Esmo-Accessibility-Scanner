@@ -17,13 +17,15 @@ defined( 'ABSPATH' ) || exit;
 final class ScoreCalculator {
 
 	/**
-	 * Penalty weights per severity bucket.
+	 * Penalty weights per severity bucket. "review" (axe could not decide, a person
+	 * has to check) is listed but costs nothing.
 	 */
 	private const WEIGHTS = array(
 		'critical' => 10,
 		'major'    => 5,
 		'minor'    => 2,
 		'warning'  => 1,
+		'review'   => 0,
 	);
 
 	/**
