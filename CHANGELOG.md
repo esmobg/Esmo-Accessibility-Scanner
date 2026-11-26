@@ -2,6 +2,15 @@
 
 All notable changes to Esmo Accessibility Scanner, called Accessibility Guardian up to 1.2.0. The WordPress.org changelog lives in [`readme.txt`](readme.txt).
 
+## WordPress 7.2 compatibility — 2026-11-26
+
+No new version: 1.3.1 works unchanged with WordPress 7.2 and PHP 8.6.
+
+- `readme.txt`: `Tested up to: 7.2`.
+- Tested on WordPress 7.2-RC3 with PHP 8.5: full-site and single-page scans, the toolbar shortcut next to the new SVG toolbar icons, the menu icon next to the new SVG menu icons, Issues, Settings with every automatic fix on, CSV and JSON export. No PHP notices or deprecations with `WP_DEBUG_LOG`, no browser console errors.
+- PHP 8.6: lint and PHPUnit pass; CI now also runs PHP 8.6.
+- The plugin does not use jQuery, the REST API, the Abilities API, the Interactivity API, `@wordpress/components` or media uploads, so the other 7.2 changes do not affect it.
+
 ## 1.3.1 — 2026-10-29
 
 Fewer false positives, found while scanning a Bulgarian WooCommerce site (77/100 before, 100/100 after, with no change to the site).

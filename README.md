@@ -5,9 +5,9 @@
 # Esmo Accessibility Scanner for WordPress
 
 [![CI](https://github.com/esmobg/Esmo-Accessibility-Scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/esmobg/Esmo-Accessibility-Scanner/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-1.3.0-blue)
-![WordPress](https://img.shields.io/badge/WordPress-6.4%E2%80%937.1-21759b)
-![PHP](https://img.shields.io/badge/PHP-8.0%E2%80%938.5-777bb4)
+![Version](https://img.shields.io/badge/version-1.3.1-blue)
+![WordPress](https://img.shields.io/badge/WordPress-6.4%E2%80%937.2-21759b)
+![PHP](https://img.shields.io/badge/PHP-8.0%E2%80%938.6-777bb4)
 ![License](https://img.shields.io/badge/license-GPL--2.0--or--later-green)
 [![Website](https://img.shields.io/badge/website-esmobg.github.io-2356eb)](https://esmobg.github.io/Esmo-Accessibility-Scanner/)
 
@@ -80,8 +80,8 @@ All screenshots are taken from a real WordPress 7.1 site (a demo bakery site wit
 
 | | |
 | --- | --- |
-| WordPress | 6.4 or later (tested up to 7.1; also checked against 7.2-alpha) |
-| PHP | 8.0 or later (tested on 8.0, 8.3, 8.4 and 8.5) |
+| WordPress | 6.4 or later (tested up to 7.2) |
+| PHP | 8.0 or later (tested on 8.0 to 8.6) |
 | Browser | Any current Chrome, Edge, Firefox or Safari for the admin who runs scans |
 | Framing | Your pages must be allowed in a same-origin frame (see below) |
 
