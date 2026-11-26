@@ -2,7 +2,7 @@
 Contributors: esmobg
 Tags: accessibility, wcag, a11y, accessibility checker, audit
 Requires at least: 6.4
-Tested up to: 7.1
+Tested up to: 7.2
 Requires PHP: 8.0
 Stable tag: 1.3.1
 License: GPLv2 or later
